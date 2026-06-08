@@ -156,20 +156,34 @@ const ChimeAudio = (() => {
     return westLoading;
   }
 
-  /* Play a slice of the real recording: from `offset` for `dur` seconds. */
-  function playSegment(buf, offset, dur, startAt) {
+  /* Play a slice of the real recording from `offset` for `dur` seconds,
+     through its own gain stage with a smooth release fade. The fade means a
+     segment never ends abruptly: it decays gracefully and overlaps anything
+     that starts before it has faded out. */
+  function playSegment(buf, offset, dur, startAt, fadeOut = 0.5) {
     const src = ctx.createBufferSource();
     src.buffer = buf;
-    src.connect(master);
+    const g = ctx.createGain();
+    src.connect(g);
+    g.connect(master);
+    const end = startAt + dur;
+    const fade = Math.min(fadeOut, dur * 0.5);
+    g.gain.setValueAtTime(1, Math.max(startAt, end - fade));
+    g.gain.linearRampToValueAtTime(0.0001, end);
     src.start(startAt, offset, dur);
+    src.stop(end + 0.03);
     return src;
   }
 
-  /* Real Westminster chime for a quarter (uses the recorded bells). */
+  /* Real Westminster chime for a quarter (uses the recorded bells). The final
+     note is allowed to ring out past the phrase boundary — generously at the
+     top of the hour, where the recording has a real gap before the strike, so
+     the chime fades naturally into (and overlaps) the strike. */
   function playWestminster(quarter) {
     const phrases = westPhraseCount(quarter);
-    const dur = phrases * WMR.phrase;
-    playSegment(westBuf, WMR.chimeStart, dur, ctx.currentTime + 0.05);
+    const ringOut = quarter === 0 ? 1.2 : 0.0;
+    const dur = phrases * WMR.phrase + ringOut;
+    playSegment(westBuf, WMR.chimeStart, dur, ctx.currentTime + 0.05, 0.6);
   }
 
   /* Play a chime melody for a given quarter (0..3). */
