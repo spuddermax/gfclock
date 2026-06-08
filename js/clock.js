@@ -31,6 +31,7 @@ const Clock = (() => {
     el.sky = document.getElementById('sky');
     el.stars = document.getElementById('stars');
     el.clouds = document.getElementById('clouds');
+    el.overcast = document.getElementById('overcast');
     el.mountains = document.getElementById('mountains');
     el.stage = document.getElementById('stage');
   }
@@ -68,23 +69,26 @@ const Clock = (() => {
   /* ---------- Clouds (density-driven) ---------- */
   // Up to MAX_CLOUDS at 100% density. The first four specs reproduce the
   // original hand-placed clouds, so 20% density == the previous look.
-  const MAX_CLOUDS = 20;
+  // 100% packs the sky with MAX_CLOUDS (mostly overcast); the count curve is
+  // shaped so 20% still yields exactly 4 clouds (the original look).
+  const MAX_CLOUDS = 50;
+  const CLOUD_EXP = Math.log(4 / MAX_CLOUDS) / Math.log(0.2); // count(20%) == 4
   const CLOUD_SPECS = (() => {
     const specs = [
-      { top: 12, w: 240, h: 84,  op: 0.92, dur: 78,  delay: -12 },
-      { top: 25, w: 180, h: 64,  op: 0.80, dur: 104, delay: -55 },
-      { top: 6,  w: 320, h: 108, op: 0.85, dur: 132, delay: -88 },
-      { top: 32, w: 150, h: 56,  op: 0.72, dur: 92,  delay: -40 },
+      { top: 12, w: 240, h: 84,  op: 0.92 },
+      { top: 25, w: 180, h: 64,  op: 0.80 },
+      { top: 6,  w: 320, h: 108, op: 0.85 },
+      { top: 32, w: 150, h: 56,  op: 0.72 },
     ];
-    // Fill the rest with deterministic variety (stable across rebuilds).
+    // Fill the rest with deterministic variety (stable across rebuilds). The
+    // higher-index clouds run bigger and span more of the sky's height so a
+    // full deck reads as overcast rather than scattered puffs.
     for (let i = 4; i < MAX_CLOUDS; i++) {
-      const w = 140 + (i * 53) % 200;
+      const w = 200 + (i * 53) % 190;        // 200..389
       specs.push({
-        top: 3 + (i * 37) % 40,
-        w, h: Math.round(w * 0.34),
-        op: 0.62 + ((i * 17) % 34) / 100,
-        dur: 80 + (i * 29) % 75,
-        delay: -((i * 23) % 130),
+        top: (i * 37) % 60,                  // 0..59% — spread across the sky
+        w, h: Math.round(w * 0.36),
+        op: 0.66 + ((i * 17) % 30) / 100,    // 0.66..0.95
       });
     }
     return specs;
@@ -93,11 +97,17 @@ const Clock = (() => {
   const CLOUD_PERIOD = 90;    // seconds for one cloud to drift across the sky
   const CLOUD_MARGIN = 360;   // px off-screen at each wrap (>= widest cloud)
   let cloudObjs = [];         // { el, x } for each live cloud, moved each frame
+  let cloudDensity = 20;      // current density %, used for the overcast haze
+
+  // How opaque the overcast sheet is for a given density (0 until ~30%, rising
+  // to a near-solid deck at 100% so it reads as mostly overcast).
+  function overcastLevel(d) { return Math.max(0, (d - 30) / 70) * 0.88; }
 
   function buildClouds(pct) {
     if (!el.clouds) return;
     const d = Math.max(0, Math.min(100, Number(pct) || 0));
-    const count = Math.round(d / 100 * MAX_CLOUDS);
+    cloudDensity = d;
+    const count = d <= 0 ? 0 : Math.round(Math.pow(d / 100, CLOUD_EXP) * MAX_CLOUDS);
     const vw = window.innerWidth || 1080;
     const span = vw + CLOUD_MARGIN;     // wrap distance (entry-to-entry)
     el.clouds.innerHTML = '';
@@ -212,12 +222,11 @@ const Clock = (() => {
     // gone once it's bright enough (ambient ~0.85).
     const stars = Math.max(0, Math.min(1, (0.85 - ambient) / (0.85 - 0.6)));
     el.stars.style.opacity = stars.toFixed(3);
-    // Clouds fade in with daylight (opposite of the stars) and the mountains
-    // dim toward night so the whole scene tracks the time of day.
-    if (el.clouds) {
-      const clouds = Math.max(0, Math.min(0.92, (ambient - 0.6) / (1.05 - 0.6) * 0.92));
-      el.clouds.style.opacity = clouds.toFixed(3);
-    }
+    // Clouds (and the overcast haze) fade in with daylight (opposite of the
+    // stars) and the mountains dim toward night so the scene tracks the time.
+    const dayFactor = Math.max(0, Math.min(1, (ambient - 0.6) / (1.05 - 0.6)));
+    if (el.clouds) el.clouds.style.opacity = (dayFactor * 0.92).toFixed(3);
+    if (el.overcast) el.overcast.style.opacity = (dayFactor * overcastLevel(cloudDensity)).toFixed(3);
     if (el.mountains) {
       el.mountains.style.filter = `brightness(${Math.max(0.5, Math.min(1, ambient)).toFixed(3)})`;
     }
