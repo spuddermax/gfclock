@@ -33,6 +33,7 @@ Click the **⚙ gear** (top-right) to open the settings drawer:
 | **Chime melody** | `Westminster`, `Whittington`, `St. Michael`, or `Silent` — the triple-chime selector. |
 | **Chime tempo** | Slider (50–150%) for how fast the notes play within a phrase. |
 | **Pause between phrases** | Slider (0–3 s, default **1.0 s**) for the silence before each next phrase. Absolute — not affected by tempo. |
+| **Pause between hour strikes** | Slider (0.5–3 s, default **1.5 s**) for the spacing of the hour-count gong. |
 | **Mute / Volume** | Master sound controls. |
 | **Auto night silence** | Suppresses chimes 10:15 PM – 7:15 AM, like the real movement. |
 | **Ticking sound** | Per-second escapement tick/tock (ticks 24/7; night silence only affects chimes). |
@@ -77,6 +78,7 @@ Append to the URL to preset state (handy for testing):
 - `?speed=1|60|300|3600`
 - `?tempo=50..150` — chime tempo percent (note speed within a phrase)
 - `?gap=0..3` — seconds of silence between chime phrases (default `1.0`)
+- `?strikegap=0.5..3` — seconds between hour strikes (default `1.5`)
 - `?time=HH:MM` — jump the clock to a time
 - `?moon=0..1` — pin the moon phase (`0`/`1` = new, `0.5` = full)
 

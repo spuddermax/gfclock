@@ -17,6 +17,7 @@
     tickVolume: 60,
     chimeTempo: 100, // percent; 100 = normal, lower = slower/more spacious
     phraseGap: 1.0,  // seconds of silence between chime phrases
+    strikeGap: 1.5,  // seconds between hour strikes
     speed: 1,
   };
 
@@ -29,6 +30,7 @@
   if (params.has('speed')) settings.speed = Number(params.get('speed')) || settings.speed;
   if (params.has('tempo')) settings.chimeTempo = Number(params.get('tempo')) || settings.chimeTempo;
   if (params.has('gap')) settings.phraseGap = Number(params.get('gap'));
+  if (params.has('strikegap')) settings.strikeGap = Number(params.get('strikegap'));
 
   function load() {
     try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }
@@ -138,6 +140,8 @@
     el.tempoReadout = document.getElementById('tempoReadout');
     el.gapRange = document.getElementById('gapRange');
     el.gapReadout = document.getElementById('gapReadout');
+    el.strikeGapRange = document.getElementById('strikeGapRange');
+    el.strikeGapReadout = document.getElementById('strikeGapReadout');
     el.secondsChk = document.getElementById('secondsChk');
     el.testChime = document.getElementById('testChime');
     el.setTime = document.getElementById('setTime');
@@ -185,6 +189,15 @@
     ChimeAudio.setPhraseGap(sec);
     if (el.gapRange) el.gapRange.value = sec;
     if (el.gapReadout) el.gapReadout.textContent = sec.toFixed(1) + ' s';
+    save();
+  }
+
+  function applyStrikeGap(sec) {
+    sec = Math.max(0.5, Math.min(3, Number(sec) || 1.5));
+    settings.strikeGap = sec;
+    ChimeAudio.setStrikeGap(sec);
+    if (el.strikeGapRange) el.strikeGapRange.value = sec;
+    if (el.strikeGapReadout) el.strikeGapReadout.textContent = sec.toFixed(1) + ' s';
     save();
   }
 
@@ -242,6 +255,9 @@
     el.gapRange.addEventListener('input', () => {
       applyPhraseGap(Number(el.gapRange.value));
     });
+    el.strikeGapRange.addEventListener('input', () => {
+      applyStrikeGap(Number(el.strikeGapRange.value));
+    });
     el.secondsChk.addEventListener('change', () => {
       settings.showSeconds = el.secondsChk.checked;
       Clock.showSeconds(settings.showSeconds);
@@ -278,6 +294,7 @@
     applyChime(settings.chime);
     applyTempo(settings.chimeTempo);
     applyPhraseGap(settings.phraseGap);
+    applyStrikeGap(settings.strikeGap);
     applySpeed(settings.speed);
     el.muteChk.checked = settings.muted;
     el.volRange.value = settings.volume;

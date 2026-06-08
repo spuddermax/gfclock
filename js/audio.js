@@ -36,8 +36,9 @@ const ChimeAudio = (() => {
   const WMR = {
     strikeStart: 16.55, // onset of the single hour strike
     strikeRing: 4.6,    // how long to let each strike ring
-    strikeGap: 1.5,     // spacing between successive strikes
   };
+  // Absolute spacing (seconds) between successive hour strikes — user-settable.
+  let strikeGapSec = 1.5;
 
   // ---- Tubular-bell note samples (CC0, FreePats / VCSL) ----
   const BELL_DIR = 'assets/audio/bells/';
@@ -313,15 +314,14 @@ const ChimeAudio = (() => {
       let t = ctx.currentTime + 0.05;
       for (let i = 0; i < count; i++) {
         playSegment(westBuf, WMR.strikeStart, WMR.strikeRing, t);
-        t += WMR.strikeGap;
+        t += strikeGapSec;
       }
       return;
     }
     let t = ctx.currentTime + 0.05;
-    const gap = 1.4;
     for (let i = 0; i < count; i++) {
       bell(NOTE.E3, t, 4.0, 1.25);
-      t += gap;
+      t += strikeGapSec;
     }
   }
 
@@ -348,6 +348,12 @@ const ChimeAudio = (() => {
     phraseGapSec = Math.max(0, Math.min(5, sec));
   }
 
+  /* Set the absolute spacing between hour strikes, in seconds. */
+  function setStrikeGap(sec) {
+    if (!(sec >= 0)) return;
+    strikeGapSec = Math.max(0.2, Math.min(5, sec));
+  }
+
   function setVolume(v) {
     volume = v;
     if (master && !muted) master.gain.value = volume;
@@ -364,5 +370,5 @@ const ChimeAudio = (() => {
      preloading the bell samples + the strike recording so they're ready. */
   function unlock() { ensureCtx(); loadBells(); loadWestminster(); }
 
-  return { playChime, playStrike, playTick, chimeDuration, setVolume, setTickVolume, setMuted, setTempo, setPhraseGap, unlock };
+  return { playChime, playStrike, playTick, chimeDuration, setVolume, setTickVolume, setMuted, setTempo, setPhraseGap, setStrikeGap, unlock };
 })();
