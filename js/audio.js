@@ -45,9 +45,15 @@ const ChimeAudio = (() => {
   const bellBufs = {};       // note name -> AudioBuffer
   let bellsLoading = null;
   let bellsLoaded = false;
-  // Chime tempo (shared by playback and duration estimate).
-  const CHIME_NOTE_DUR = 0.95; // spacing between notes
-  const CHIME_GAP = 0.30;      // extra gap between phrases
+  // Chime tempo (shared by playback and duration estimate). The base values
+  // are the "1×" rhythm; `tempo` scales them (higher = faster, lower = more
+  // spacious). The pause between phrases is deliberately generous so the
+  // quarters don't run together.
+  const BASE_NOTE_DUR = 0.95; // base spacing between notes
+  const BASE_GAP = 0.60;      // base extra gap between phrases
+  let tempo = 1.0;            // 1 = normal; <1 slower, >1 faster
+  const noteDur = () => BASE_NOTE_DUR / tempo;
+  const phraseGap = () => BASE_GAP / tempo;
 
   // Note frequencies (Hz) used by the chime melodies + sample pitches.
   const NOTE = {
@@ -251,8 +257,8 @@ const ChimeAudio = (() => {
     const run = () => {
       let t = ctx.currentTime + 0.05;
       phrases.forEach((phrase) => {
-        phrase.forEach((n) => { playBellNote(n, t); t += CHIME_NOTE_DUR; });
-        t += CHIME_GAP;
+        phrase.forEach((n) => { playBellNote(n, t); t += noteDur(); });
+        t += phraseGap();
       });
     };
     if (bellsLoaded) run();
@@ -326,7 +332,14 @@ const ChimeAudio = (() => {
     if (tune === 'silent' || !TUNES[tune] || !TUNES[tune][quarter]) return 0;
     const phrases = TUNES[tune][quarter];
     const notes = phrases.reduce((s, p) => s + p.length, 0);
-    return notes * CHIME_NOTE_DUR + phrases.length * CHIME_GAP;
+    return notes * noteDur() + phrases.length * phraseGap();
+  }
+
+  /* Set the chime tempo. `t` is a multiplier: 1 = normal, <1 slower (more
+     space between notes/phrases), >1 faster. Clamped to a sane range. */
+  function setTempo(t) {
+    if (!(t > 0)) return;
+    tempo = Math.max(0.4, Math.min(2.0, t));
   }
 
   function setVolume(v) {
@@ -345,5 +358,5 @@ const ChimeAudio = (() => {
      preloading the bell samples + the strike recording so they're ready. */
   function unlock() { ensureCtx(); loadBells(); loadWestminster(); }
 
-  return { playChime, playStrike, playTick, chimeDuration, setVolume, setTickVolume, setMuted, unlock };
+  return { playChime, playStrike, playTick, chimeDuration, setVolume, setTickVolume, setMuted, setTempo, unlock };
 })();

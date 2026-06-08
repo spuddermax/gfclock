@@ -31,6 +31,7 @@ Click the **⚙ gear** (top-right) to open the settings drawer:
 | --- | --- |
 | **Background** | `Light` (white), `Dark`, or `Auto` — Auto simulates day/night sky + ambient light from the (simulated) time. |
 | **Chime melody** | `Westminster`, `Whittington`, `St. Michael`, or `Silent` — the triple-chime selector. |
+| **Chime tempo** | Slider (50–150%) for how fast the chime plays — lower is slower / more spacious between phrases. |
 | **Mute / Volume** | Master sound controls. |
 | **Auto night silence** | Suppresses chimes 10:15 PM – 7:15 AM, like the real movement. |
 | **Ticking sound** | Per-second escapement tick/tock (ticks 24/7; night silence only affects chimes). |
@@ -73,6 +74,7 @@ Append to the URL to preset state (handy for testing):
 - `?theme=light|dark|auto`
 - `?chime=westminster|whittington|stmichael|silent`
 - `?speed=1|60|300|3600`
+- `?tempo=50..150` — chime tempo percent (lower = slower / more spacious)
 - `?time=HH:MM` — jump the clock to a time
 - `?moon=0..1` — pin the moon phase (`0`/`1` = new, `0.5` = full)
 

@@ -15,6 +15,7 @@
     showSeconds: true,
     tick: true,
     tickVolume: 60,
+    chimeTempo: 100, // percent; 100 = normal, lower = slower/more spacious
     speed: 1,
   };
 
@@ -25,6 +26,7 @@
   if (params.has('theme')) settings.theme = params.get('theme');
   if (params.has('chime')) settings.chime = params.get('chime');
   if (params.has('speed')) settings.speed = Number(params.get('speed')) || settings.speed;
+  if (params.has('tempo')) settings.chimeTempo = Number(params.get('tempo')) || settings.chimeTempo;
 
   function load() {
     try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }
@@ -130,6 +132,8 @@
     el.nightChk = document.getElementById('nightChk');
     el.tickChk = document.getElementById('tickChk');
     el.tickVolRange = document.getElementById('tickVolRange');
+    el.tempoRange = document.getElementById('tempoRange');
+    el.tempoReadout = document.getElementById('tempoReadout');
     el.secondsChk = document.getElementById('secondsChk');
     el.testChime = document.getElementById('testChime');
     el.setTime = document.getElementById('setTime');
@@ -159,6 +163,14 @@
   function applyChime(chime) {
     settings.chime = chime;
     setActive(el.chimeSeg, 'chime', chime);
+    save();
+  }
+
+  function applyTempo(pct) {
+    settings.chimeTempo = pct;
+    ChimeAudio.setTempo(pct / 100);
+    if (el.tempoRange) el.tempoRange.value = pct;
+    if (el.tempoReadout) el.tempoReadout.textContent = pct + '%';
     save();
   }
 
@@ -210,6 +222,9 @@
       ChimeAudio.setTickVolume(settings.tickVolume / 100);
       save();
     });
+    el.tempoRange.addEventListener('input', () => {
+      applyTempo(Number(el.tempoRange.value));
+    });
     el.secondsChk.addEventListener('change', () => {
       settings.showSeconds = el.secondsChk.checked;
       Clock.showSeconds(settings.showSeconds);
@@ -244,6 +259,7 @@
   function hydrate() {
     applyTheme(settings.theme);
     applyChime(settings.chime);
+    applyTempo(settings.chimeTempo);
     applySpeed(settings.speed);
     el.muteChk.checked = settings.muted;
     el.volRange.value = settings.volume;
