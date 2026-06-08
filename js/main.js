@@ -16,6 +16,7 @@
     tick: true,
     tickVolume: 60,
     chimeTempo: 100, // percent; 100 = normal, lower = slower/more spacious
+    phraseGap: 1.0,  // seconds of silence between chime phrases
     speed: 1,
   };
 
@@ -27,6 +28,7 @@
   if (params.has('chime')) settings.chime = params.get('chime');
   if (params.has('speed')) settings.speed = Number(params.get('speed')) || settings.speed;
   if (params.has('tempo')) settings.chimeTempo = Number(params.get('tempo')) || settings.chimeTempo;
+  if (params.has('gap')) settings.phraseGap = Number(params.get('gap'));
 
   function load() {
     try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }
@@ -134,6 +136,8 @@
     el.tickVolRange = document.getElementById('tickVolRange');
     el.tempoRange = document.getElementById('tempoRange');
     el.tempoReadout = document.getElementById('tempoReadout');
+    el.gapRange = document.getElementById('gapRange');
+    el.gapReadout = document.getElementById('gapReadout');
     el.secondsChk = document.getElementById('secondsChk');
     el.testChime = document.getElementById('testChime');
     el.setTime = document.getElementById('setTime');
@@ -171,6 +175,16 @@
     ChimeAudio.setTempo(pct / 100);
     if (el.tempoRange) el.tempoRange.value = pct;
     if (el.tempoReadout) el.tempoReadout.textContent = pct + '%';
+    save();
+  }
+
+  function applyPhraseGap(sec) {
+    // clamp to the slider's range and one decimal place
+    sec = Math.max(0, Math.min(3, Number(sec) || 0));
+    settings.phraseGap = sec;
+    ChimeAudio.setPhraseGap(sec);
+    if (el.gapRange) el.gapRange.value = sec;
+    if (el.gapReadout) el.gapReadout.textContent = sec.toFixed(1) + ' s';
     save();
   }
 
@@ -225,6 +239,9 @@
     el.tempoRange.addEventListener('input', () => {
       applyTempo(Number(el.tempoRange.value));
     });
+    el.gapRange.addEventListener('input', () => {
+      applyPhraseGap(Number(el.gapRange.value));
+    });
     el.secondsChk.addEventListener('change', () => {
       settings.showSeconds = el.secondsChk.checked;
       Clock.showSeconds(settings.showSeconds);
@@ -260,6 +277,7 @@
     applyTheme(settings.theme);
     applyChime(settings.chime);
     applyTempo(settings.chimeTempo);
+    applyPhraseGap(settings.phraseGap);
     applySpeed(settings.speed);
     el.muteChk.checked = settings.muted;
     el.volRange.value = settings.volume;

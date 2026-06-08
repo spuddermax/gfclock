@@ -45,15 +45,15 @@ const ChimeAudio = (() => {
   const bellBufs = {};       // note name -> AudioBuffer
   let bellsLoading = null;
   let bellsLoaded = false;
-  // Chime tempo (shared by playback and duration estimate). The base values
-  // are the "1×" rhythm; `tempo` scales them (higher = faster, lower = more
-  // spacious). The pause between phrases is deliberately generous so the
-  // quarters don't run together.
-  const BASE_NOTE_DUR = 0.95; // base spacing between notes
-  const BASE_GAP = 0.60;      // base extra gap between phrases
+  // Chime rhythm. `tempo` scales the note-to-note spacing (higher = faster).
+  // The pause between phrases is a separate, absolute value the user sets
+  // directly (in seconds) so the quarters don't run together — it is NOT
+  // affected by tempo, so "set it to 1s" means exactly 1s.
+  const BASE_NOTE_DUR = 0.95; // base spacing between notes (scaled by tempo)
   let tempo = 1.0;            // 1 = normal; <1 slower, >1 faster
+  let phraseGapSec = 1.0;     // absolute pause between phrases (seconds)
   const noteDur = () => BASE_NOTE_DUR / tempo;
-  const phraseGap = () => BASE_GAP / tempo;
+  const phraseGap = () => phraseGapSec;
 
   // Note frequencies (Hz) used by the chime melodies + sample pitches.
   const NOTE = {
@@ -342,6 +342,12 @@ const ChimeAudio = (() => {
     tempo = Math.max(0.4, Math.min(2.0, t));
   }
 
+  /* Set the absolute pause between chime phrases, in seconds. */
+  function setPhraseGap(sec) {
+    if (!(sec >= 0)) return;
+    phraseGapSec = Math.max(0, Math.min(5, sec));
+  }
+
   function setVolume(v) {
     volume = v;
     if (master && !muted) master.gain.value = volume;
@@ -358,5 +364,5 @@ const ChimeAudio = (() => {
      preloading the bell samples + the strike recording so they're ready. */
   function unlock() { ensureCtx(); loadBells(); loadWestminster(); }
 
-  return { playChime, playStrike, playTick, chimeDuration, setVolume, setTickVolume, setMuted, setTempo, unlock };
+  return { playChime, playStrike, playTick, chimeDuration, setVolume, setTickVolume, setMuted, setTempo, setPhraseGap, unlock };
 })();
