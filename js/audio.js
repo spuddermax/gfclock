@@ -1,49 +1,60 @@
 /* ===========================================================
    audio.js — chime & strike playback
 
-   Westminster uses a REAL recording: a public-domain capture of a
-   Kieninger clockwork (assets/audio/westminster.mp3, from Wikimedia
-   Commons). The recording is the full hour chime + strike; we decode
-   it once and play sliced segments per quarter / per strike-count.
+   CHIMES: all three tunes (Westminster / Whittington / St. Michael)
+   are played note-by-note from REAL tubular-bell samples
+   (assets/audio/bells/*.mp3 — CC0 public domain, FreePats / Versilian
+   Community Sample Library). Each note is a one-shot that rings its
+   FULL natural decay and overlaps the next, so chimes fade out
+   naturally instead of being truncated. Notes are pitched by detuning
+   the nearest sampled pitch (all within one semitone).
 
-   Whittington and St. Michael have no freely-licensed recordings, so
-   they remain synthesized (bell partials + decay). The escapement
-   tick is also synthesized so it can stay in sync with the visible
-   tick and the fast-forward speed.
+   HOUR STRIKE: the public-domain Kieninger gong from the original
+   recording (assets/audio/westminster.mp3), which already rings out
+   naturally — authentically a different timbre from the chime bells.
+
+   The escapement tick is synthesized so it can stay in sync with the
+   visible tick and the fast-forward speed.
    =========================================================== */
 
 const ChimeAudio = (() => {
   let ctx = null;
   let master = null;
   let tickGain = null;   // independent level for the per-second tick
+  let bellComp = null;   // compressor bus for overlapping bell notes
   let volume = 0.7;
   let tickVolume = 0.6;
   let muted = false;
   let noiseBuf = null;   // cached white-noise buffer for the escapement tick
   let tockToggle = false; // alternate tick/tock pitch like a real escapement
 
-  // ---- Real Westminster recording (decoded sample buffer) ----
+  // ---- Hour-strike recording (the Kieninger gong, decoded buffer) ----
   let westBuf = null;        // decoded AudioBuffer, null until loaded
   let westLoading = null;    // in-flight load promise (avoid double fetch)
   const WEST_SRC = 'assets/audio/westminster.mp3';
-  /* Segment offsets (seconds) measured from the recording's envelope:
-     quiet intro, then 4 chime phrases, a ring-out gap, then the strike. */
+  /* Strike segment offsets (seconds) measured from the recording. */
   const WMR = {
-    chimeStart: 1.70,   // first chime note (skips the silent intro)
-    phrase: 3.325,      // duration of one of the 4 phrases
     strikeStart: 16.55, // onset of the single hour strike
     strikeRing: 4.6,    // how long to let each strike ring
     strikeGap: 1.5,     // spacing between successive strikes
   };
-  // Phrase count played per quarter (q: 1=:15, 2=:30, 3=:45, 0=hour -> 4).
-  function westPhraseCount(q) { return q === 0 ? 4 : q; }
 
-  // Note frequencies (Hz) used by the chime melodies.
+  // ---- Tubular-bell note samples (CC0, FreePats / VCSL) ----
+  const BELL_DIR = 'assets/audio/bells/';
+  const BELL_SAMPLES = ['C4', 'D4', 'E4', 'Fs4', 'Gs4', 'As4', 'C5', 'D5', 'E5'];
+  const bellBufs = {};       // note name -> AudioBuffer
+  let bellsLoading = null;
+  let bellsLoaded = false;
+  // Chime tempo (shared by playback and duration estimate).
+  const CHIME_NOTE_DUR = 0.95; // spacing between notes
+  const CHIME_GAP = 0.30;      // extra gap between phrases
+
+  // Note frequencies (Hz) used by the chime melodies + sample pitches.
   const NOTE = {
     G3: 196.00, A3: 220.00, B3: 246.94,
     C4: 261.63, D4: 293.66, E4: 329.63,
     F4: 349.23, Fs4: 369.99, G4: 392.00,
-    Gs4: 415.30, A4: 440.00, B4: 493.88,
+    Gs4: 415.30, A4: 440.00, As4: 466.16, B4: 493.88,
     C5: 523.25, D5: 587.33, E5: 659.25,
     // Low strike bell
     E3: 164.81, C3: 130.81,
@@ -113,6 +124,15 @@ const ChimeAudio = (() => {
       tickGain = ctx.createGain();
       tickGain.gain.value = tickVolume;
       tickGain.connect(master);
+      // Bell notes run through a gentle compressor so many overlapping
+      // ring-outs don't sum into digital clipping.
+      bellComp = ctx.createDynamicsCompressor();
+      bellComp.threshold.value = -16;
+      bellComp.knee.value = 24;
+      bellComp.ratio.value = 3;
+      bellComp.attack.value = 0.003;
+      bellComp.release.value = 0.5;
+      bellComp.connect(master);
     }
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
@@ -175,40 +195,68 @@ const ChimeAudio = (() => {
     return src;
   }
 
-  /* Real Westminster chime for a quarter (uses the recorded bells). The final
-     note is allowed to ring out past the phrase boundary — generously at the
-     top of the hour, where the recording has a real gap before the strike, so
-     the chime fades naturally into (and overlaps) the strike. */
-  function playWestminster(quarter) {
-    const phrases = westPhraseCount(quarter);
-    const ringOut = quarter === 0 ? 1.2 : 0.0;
-    const dur = phrases * WMR.phrase + ringOut;
-    playSegment(westBuf, WMR.chimeStart, dur, ctx.currentTime + 0.05, 0.6);
+  /* Lazy-load the tubular-bell note samples (once). Individual fetch
+     failures are tolerated (that note falls back to synth). */
+  function loadBells() {
+    if (bellsLoading) return bellsLoading;
+    ensureCtx();
+    bellsLoading = Promise.all(BELL_SAMPLES.map((n) =>
+      fetch(BELL_DIR + n + '.mp3')
+        .then((r) => r.arrayBuffer())
+        .then((ab) => ctx.decodeAudioData(ab))
+        .then((buf) => { bellBufs[n] = buf; })
+        .catch((e) => console.warn('[ChimeAudio] bell load failed:', n, e))
+    )).then(() => { bellsLoaded = true; });
+    return bellsLoading;
   }
 
-  /* Play a chime melody for a given quarter (0..3). */
+  /* Find the nearest sampled pitch to a note and the detune (cents) to it. */
+  function nearestBell(noteName) {
+    const target = NOTE[noteName];
+    if (!target) return null;
+    let best = null, bestCents = Infinity;
+    for (const s of BELL_SAMPLES) {
+      const cents = 1200 * Math.log2(target / NOTE[s]);
+      if (Math.abs(cents) < Math.abs(bestCents)) { best = s; bestCents = cents; }
+    }
+    return bellBufs[best] ? { buf: bellBufs[best], cents: bestCents } : null;
+  }
+
+  /* Play one bell note at ctx time `when`, ringing its FULL natural decay
+     (no stop()/duration — the sample's own tail provides the fade-out). */
+  function playBellNote(noteName, when, gain = 0.55) {
+    const pick = nearestBell(noteName);
+    if (!pick) {                              // samples not ready -> synth fallback
+      if (NOTE[noteName]) bell(NOTE[noteName], when, 3.2);
+      return;
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = pick.buf;
+    src.detune.value = pick.cents;
+    const g = ctx.createGain();
+    g.gain.value = gain;
+    src.connect(g);
+    g.connect(bellComp);
+    src.start(when);
+  }
+
+  /* Play a chime melody for a given quarter (0..3) using real bell samples. */
   function playChime(tune, quarter) {
     if (tune === 'silent') return;
     ensureCtx();
-    if (tune === 'westminster') {
-      if (westBuf) { playWestminster(quarter); }
-      else { loadWestminster().then(() => { if (westBuf) playWestminster(quarter); }); }
-      return;
-    }
-    // Synthesized tunes (Whittington / St. Michael).
-    if (!TUNES[tune]) return;
-    const phrases = TUNES[tune][quarter];
+    const map = TUNES[tune];
+    if (!map) return;
+    const phrases = map[quarter];
     if (!phrases) return;
-    const noteDur = 1.05;     // spacing between notes
-    let t = ctx.currentTime + 0.05;
-    phrases.forEach((phrase) => {
-      phrase.forEach((n) => {
-        const f = NOTE[n] || 440;
-        bell(f, t, 3.2);
-        t += noteDur;
+    const run = () => {
+      let t = ctx.currentTime + 0.05;
+      phrases.forEach((phrase) => {
+        phrase.forEach((n) => { playBellNote(n, t); t += CHIME_NOTE_DUR; });
+        t += CHIME_GAP;
       });
-      t += 0.35; // small gap between phrases
-    });
+    };
+    if (bellsLoaded) run();
+    else loadBells().then(run);
   }
 
   /* Short mechanical escapement "tick" — a brief filtered noise transient
@@ -271,15 +319,14 @@ const ChimeAudio = (() => {
     }
   }
 
-  /* Duration estimate (seconds) so the strike can be scheduled after the
-     chime finishes and the UI can flash appropriately. */
+  /* Time (seconds) until the chime's last note onset, so the hour strike is
+     scheduled right after the melody (its natural ring-out then overlaps the
+     strike). Not the full ring tail — we don't want to wait ~7s. */
   function chimeDuration(tune, quarter) {
-    if (tune === 'silent') return 0;
-    if (tune === 'westminster') return westPhraseCount(quarter) * WMR.phrase + 0.4;
-    if (!TUNES[tune] || !TUNES[tune][quarter]) return 0;
+    if (tune === 'silent' || !TUNES[tune] || !TUNES[tune][quarter]) return 0;
     const phrases = TUNES[tune][quarter];
     const notes = phrases.reduce((s, p) => s + p.length, 0);
-    return notes * 1.05 + phrases.length * 0.35 + 1;
+    return notes * CHIME_NOTE_DUR + phrases.length * CHIME_GAP;
   }
 
   function setVolume(v) {
@@ -294,9 +341,9 @@ const ChimeAudio = (() => {
     muted = m;
     if (master) master.gain.value = muted ? 0 : volume;
   }
-  /* Unlock audio on first user gesture (browsers require this) and
-     start preloading the Westminster recording so it's ready to play. */
-  function unlock() { ensureCtx(); loadWestminster(); }
+  /* Unlock audio on first user gesture (browsers require this) and start
+     preloading the bell samples + the strike recording so they're ready. */
+  function unlock() { ensureCtx(); loadBells(); loadWestminster(); }
 
   return { playChime, playStrike, playTick, chimeDuration, setVolume, setTickVolume, setMuted, unlock };
 })();

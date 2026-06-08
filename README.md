@@ -43,17 +43,16 @@ Settings persist via `localStorage`.
 ### Chime behavior
 
 - The clock chimes on every quarter hour and strikes the hour count at the top of the hour.
-- **Westminster** plays a **real public-domain recording** of a Kieninger clockwork
-  (`assets/audio/westminster.mp3`, from Wikimedia Commons — see
-  [`assets/audio/CREDITS.md`](assets/audio/CREDITS.md)). The recording is the full hour
-  chime + strike; it's decoded once and played back sliced into the right number of phrases
-  per quarter, with the strike segment repeated for the hour count. (The recording only
-  contains the hour sequence, so the shorter quarters are sliced from it rather than being
-  each quarter's distinct canonical permutation.)
-- **Whittington** and **St. Michael** remain **synthesized** — no freely-licensed
-  recordings of these chimes were available — so they're labeled *(synth)* in the UI.
-- The per-second **tick** is also synthesized, so it stays in sync with the visible tick
-  and the fast-forward speed.
+- All three tunes — **Westminster, Whittington, St. Michael** — are played **note-by-note from
+  real CC0 tubular-bell samples** (`assets/audio/bells/`, FreePats / Versilian — see
+  [`assets/audio/bells/CREDITS.md`](assets/audio/bells/CREDITS.md)). Each note is a one-shot that
+  rings its **full natural decay** and overlaps the next, so chimes fade out naturally instead of
+  being cut off. Notes are pitched by detuning the nearest sampled pitch (always ≤1 semitone).
+- The **hour strike** is the public-domain Kieninger gong from `assets/audio/westminster.mp3`
+  (Wikimedia Commons), which rings out naturally — authentically a different timbre from the
+  chime bells.
+- The per-second **tick** is synthesized, so it stays in sync with the visible tick and the
+  fast-forward speed.
 - Above **4× speed**, chime *audio* is suppressed to avoid overlap — the dial still flashes
   so you can see the chime fire while fast-forwarding.
 
@@ -85,8 +84,8 @@ Example: `http://localhost:8473/?theme=auto&speed=3600&moon=0.5`
 index.html      markup: cabinet, dial, moon arch, pendulum, weights, settings drawer
 styles.css      all visuals + theme variables + animations
 js/clock.js     dial build, render loop, hands, moon phase, auto day/night sky, viewport scaling
-js/audio.js     real Westminster playback + Web Audio synthesis (other chimes, strike, tick)
+js/audio.js     sample-based bell chimes + recorded strike + synth tick (Web Audio)
 js/main.js      settings, chime scheduling, night silence, persistence, UI wiring
-assets/audio/   westminster.mp3 (public-domain recording) + CREDITS.md
+assets/audio/   bells/*.mp3 (CC0 tubular bells) + westminster.mp3 (strike) + CREDITS
 start.sh        Python static server on port 8473
 ```
