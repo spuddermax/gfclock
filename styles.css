@@ -650,6 +650,15 @@ body[data-theme="auto"] #viewport { background: transparent; }
 }
 .row small { color: #889; font-size: 11px; }
 .row input[type="range"] { flex: 1; }
+/* Live, prominent value display for a slider (updates as you drag). */
+.slider-val {
+  flex: 0 0 auto;
+  min-width: 46px;
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #e6e8ef;
+}
 .row input[type="time"] {
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.15);
