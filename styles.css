@@ -498,11 +498,14 @@ body[data-theme="auto"] #viewport { background: transparent; }
 .weight .cable-wrap {
   position: absolute;
   top: 50%; left: 50%;
-  width: 36px; height: 18px;   /* hugs the rim; ends meet the descending cables */
+  /* Stroke centreline diameter must equal the cable-centre spacing (gap 33 +
+     cable width 3 = 36px) so the arc ends line up with the two cables. With
+     border-box, that means outer width = 36 + border (2.5) = 38.5px. */
+  width: 38.5px; height: 19.25px;
   transform: translateX(-50%);
   border: 2.5px solid #c2c2c2;
   border-top: none;
-  border-radius: 0 0 18px 18px;
+  border-radius: 0 0 20px 20px;
   background: transparent;
   box-shadow: 0 1px 2px rgba(0,0,0,0.45);
   z-index: 4;                  /* draw the cable on top of the wheel's rim */
