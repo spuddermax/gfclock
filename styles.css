@@ -116,13 +116,8 @@ body[data-theme="auto"] #sky { display: block; }
   /* Gooey filter merges the lobes into one smooth shape with rounded edges. */
   filter: url(#cloud-goo);
   will-change: transform;
-  animation-name: drift;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-}
-@keyframes drift {
-  from { transform: translateX(-340px); }
-  to   { transform: translateX(calc(100vw + 340px)); }
+  /* Position (translateX) is driven by JS so clouds wrap promptly and stay
+     evenly spaced by density — see moveClouds() in clock.js. */
 }
 
 /* ---------- Snow-capped mountains (auto theme) ---------- */
@@ -206,26 +201,6 @@ body[data-theme="auto"] #viewport { background: transparent; }
   box-shadow: inset 0 6px 12px rgba(255,255,255,0.15), inset 0 -10px 18px rgba(0,0,0,0.4);
   border-bottom: 8px solid var(--wood-edge);
 }
-
-.finial {
-  position: absolute;
-  bottom: 96px;
-  width: 26px;
-  height: 70px;
-  background: linear-gradient(180deg, var(--brass-lite), var(--brass), var(--brass-dark));
-  border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.4);
-}
-.finial::after {
-  content: "";
-  position: absolute;
-  top: -22px; left: 50%; transform: translateX(-50%);
-  width: 18px; height: 24px; border-radius: 50%;
-  background: linear-gradient(180deg, var(--brass-lite), var(--brass-dark));
-}
-.finial-center { left: 50%; transform: translateX(-50%); bottom: 120px; }
-.finial-left  { left: 70px; }
-.finial-right { right: 70px; }
 
 .hood-body {
   width: 700px;

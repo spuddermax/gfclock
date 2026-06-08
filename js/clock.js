@@ -90,11 +90,18 @@ const Clock = (() => {
     return specs;
   })();
 
+  const CLOUD_PERIOD = 90;    // seconds for one cloud to drift across the sky
+  const CLOUD_MARGIN = 360;   // px off-screen at each wrap (>= widest cloud)
+  let cloudObjs = [];         // { el, x } for each live cloud, moved each frame
+
   function buildClouds(pct) {
     if (!el.clouds) return;
     const d = Math.max(0, Math.min(100, Number(pct) || 0));
     const count = Math.round(d / 100 * MAX_CLOUDS);
+    const vw = window.innerWidth || 1080;
+    const span = vw + CLOUD_MARGIN;     // wrap distance (entry-to-entry)
     el.clouds.innerHTML = '';
+    cloudObjs = [];
     for (let i = 0; i < count; i++) {
       const s = CLOUD_SPECS[i];
       const c = document.createElement('div');
@@ -103,9 +110,27 @@ const Clock = (() => {
       c.style.width = s.w + 'px';
       c.style.height = s.h + 'px';
       c.style.opacity = s.op;
-      c.style.animationDuration = s.dur + 's';
-      c.style.animationDelay = s.delay + 's';
+      // Phase the clouds evenly across one cycle so they're always spaced a
+      // constant time apart — at higher density they enter the left sooner
+      // (interval = CLOUD_PERIOD / count).
+      const x = (i / Math.max(1, count)) * span - CLOUD_MARGIN;
+      c.style.transform = `translateX(${x}px)`;
       el.clouds.appendChild(c);
+      cloudObjs.push({ el: c, x });
+    }
+  }
+
+  /* Drift clouds left->right in real time; the instant a cloud clears the
+     right edge it wraps back just off the left, so it respawns promptly. */
+  function moveClouds(dtMs) {
+    if (!cloudObjs.length) return;
+    const vw = window.innerWidth || 1080;
+    const span = vw + CLOUD_MARGIN;
+    const dx = (span / CLOUD_PERIOD) * (dtMs / 1000);
+    for (const c of cloudObjs) {
+      c.x += dx;
+      if (c.x > vw) c.x -= span;   // fully past the right edge -> back to the left
+      c.el.style.transform = `translateX(${c.x}px)`;
     }
   }
 
@@ -226,7 +251,7 @@ const Clock = (() => {
     updateHands(date);
     updateDate(date);
     updateMoon(date);
-    if (document.body.dataset.theme === 'auto') applyAutoTheme(date);
+    if (document.body.dataset.theme === 'auto') { applyAutoTheme(date); moveClouds(dt); }
 
     // Pass both simulated and real elapsed ms so consumers can advance
     // time-based state (weights) and real-time animations (winding).
