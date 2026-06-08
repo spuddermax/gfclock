@@ -86,7 +86,7 @@ const Clock = (() => {
     for (let i = 4; i < MAX_CLOUDS; i++) {
       const w = 200 + (i * 53) % 190;        // 200..389
       specs.push({
-        top: (i * 37) % 60,                  // 0..59% — spread across the sky
+        top: (i * 37) % 66,                  // 0..65% — lowest clouds reach just below the peaks
         w, h: Math.round(w * 0.36),
         op: 0.66 + ((i * 17) % 30) / 100,    // 0.66..0.95
       });
