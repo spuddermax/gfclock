@@ -29,6 +29,7 @@ const Clock = (() => {
     el.dateText = document.getElementById('dateText');
     el.moonDisc = document.getElementById('moonDisc');
     el.sky = document.getElementById('sky');
+    el.stars = document.getElementById('stars');
     el.stage = document.getElementById('stage');
   }
 
@@ -136,6 +137,10 @@ const Clock = (() => {
     const { sky, ambient } = skyForHour(h);
     el.sky.style.background = sky;
     el.stage.style.setProperty('--ambient', ambient.toFixed(3));
+    // Stars fade in as the sky darkens: full at deep night (ambient ~0.6),
+    // gone once it's bright enough (ambient ~0.85).
+    const stars = Math.max(0, Math.min(1, (0.85 - ambient) / (0.85 - 0.6)));
+    el.stars.style.opacity = stars.toFixed(3);
   }
 
   /* ---------- Hands ---------- */
