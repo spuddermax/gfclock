@@ -54,27 +54,32 @@ const Clock = (() => {
   }
 
   /* ---------- Moon phase ---------- */
+  let moonOverride = null;  // testing: pin the phase (0..1) via Clock.setMoonPhase
   function updateMoon(date) {
-    const days = (date.getTime() - NEW_MOON_EPOCH) / 86400000;
-    let phase = (days % SYNODIC) / SYNODIC;  // 0..1 (0 = new, 0.5 = full)
-    if (phase < 0) phase += 1;
-
-    // Horizontal travel of the moon across the arch (decorative).
-    const x = (phase * 2) % 1;            // sweeps twice per lunar month (dual-moon dial)
-    el.moonDisc.style.left = `${15 + x * 70}%`;
-
-    // Phase shadow: full moon (phase 0.5) -> shift 0; new moon -> fully covered.
-    // Map phase to a shadow offset in [-110%, 110%].
-    // phase 0 (new): cover -> shift ~0 fully over; phase .5 (full): shift off-screen.
-    let shift;
-    if (phase <= 0.5) {
-      // waxing: from new (covered) to full (uncovered), shadow exits to the right
-      shift = (0.5 - phase) / 0.5 * 110; // 110 -> 0
+    let phase;
+    if (moonOverride != null) {
+      phase = moonOverride;
     } else {
-      // waning: shadow enters from the left
-      shift = -((phase - 0.5) / 0.5) * 110; // 0 -> -110
+      const days = (date.getTime() - NEW_MOON_EPOCH) / 86400000;
+      phase = (days % SYNODIC) / SYNODIC;  // 0..1 (0 = new, 0.5 = full)
+      if (phase < 0) phase += 1;
     }
-    el.moonDisc.style.setProperty('--phase-shift', `${shift}%`);
+
+    // The moon transits the arch between the two earth globes. Position alone
+    // encodes the phase, exactly like a real lunar dial: the globes occlude it
+    // at the horizons (crescents) and it's fully clear at the top (full moon).
+    //   phase 0   (new)  -> hidden behind the RIGHT globe, near the horizon
+    //   phase 0.5 (full) -> centered at the top of the arch
+    //   phase 1   (new)  -> hidden behind the LEFT globe, near the horizon
+    const ARCH_W = 360 - 16;  // inner width (minus the 8px brass border each side)
+    const ARCH_H = 190 - 8;
+    const MOON = 66;
+    const xFrac = 1 - phase;                 // 1 = right edge, 0 = left edge
+    const cx = 30 + xFrac * (ARCH_W - 60);   // moon centre x
+    const arc = Math.sin(phase * Math.PI);   // 0 at horizons, 1 at top-centre
+    const cy = ARCH_H - 28 - arc * (ARCH_H - 90); // moon centre y (from top)
+    el.moonDisc.style.left = `${cx - MOON / 2}px`;
+    el.moonDisc.style.top = `${cy - MOON / 2}px`;
   }
 
   /* ---------- Auto day/night sky ---------- */
@@ -175,8 +180,9 @@ const Clock = (() => {
   function getSpeed() { return speed; }
   function setTime(ms) { simNow = ms; }
   function getTime() { return simNow; }
+  function setMoonPhase(p) { moonOverride = (p == null ? null : ((p % 1) + 1) % 1); }
   function setOnTick(fn) { onTick = fn; }
   function showSeconds(show) { el.second.style.display = show ? '' : 'none'; }
 
-  return { init, setSpeed, getSpeed, setTime, getTime, setOnTick, showSeconds };
+  return { init, setSpeed, getSpeed, setTime, getTime, setMoonPhase, setOnTick, showSeconds };
 })();

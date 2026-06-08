@@ -175,29 +175,56 @@ body[data-theme="auto"] #viewport { background: transparent; }
     radial-gradient(1px 1px at 80px 110px, #fff, transparent);
   opacity: 0.8;
 }
-/* The moon disc travels across the arch; JS sets --moon-x (0..1) and --moon-phase */
+/* The moon is a full painted disc that transits the arch; JS sets its
+   left/top (px) from the lunar phase. It rides BEHIND the two earth globes,
+   which occlude it near the edges to produce waxing/waning crescents. */
 .moon-disc {
   position: absolute;
-  bottom: -34px;
   left: 50%;
-  width: 74px;
-  height: 74px;
+  top: 60px;
+  width: 66px;
+  height: 66px;
   border-radius: 50%;
-  background: radial-gradient(circle at 38% 38%, #fffef0 0%, #f3edce 55%, #cfc69a 100%);
-  box-shadow: 0 0 24px 6px rgba(255,250,210,0.55), inset -8px -6px 14px rgba(120,110,70,0.45);
-  transform: translate(-50%, 0);
+  z-index: 1;
+  background:
+    radial-gradient(8px 8px at 60% 42%, rgba(150,140,105,0.5), transparent 70%),
+    radial-gradient(6px 6px at 40% 62%, rgba(150,140,105,0.45), transparent 70%),
+    radial-gradient(5px 5px at 64% 68%, rgba(150,140,105,0.4), transparent 70%),
+    radial-gradient(circle at 38% 38%, #fffef0 0%, #f3edce 55%, #cfc69a 100%);
+  box-shadow: 0 0 22px 5px rgba(255,250,210,0.55), inset -7px -6px 12px rgba(120,110,70,0.4);
 }
-/* Shadow overlay that creates the phase (a dark disc offset across the moon) */
-.moon-disc::after {
+
+/* Two opposite earth globes flank the arch (the "lunar humps"). They sit
+   above the moon so it disappears behind them at the horizons. */
+.globe {
+  position: absolute;
+  bottom: -52px;
+  width: 156px;
+  height: 156px;
+  border-radius: 50%;
+  z-index: 2;
+  overflow: hidden;
+  background:
+    /* green continents over blue ocean */
+    radial-gradient(22px 28px at 58% 38%, #4f9446 0%, #3c7338 62%, transparent 66%),
+    radial-gradient(28px 20px at 33% 62%, #4f9446 0%, #3c7338 62%, transparent 66%),
+    radial-gradient(18px 16px at 74% 68%, #4f9446 0%, #3c7338 60%, transparent 64%),
+    radial-gradient(14px 20px at 50% 80%, #4f9446 0%, transparent 64%),
+    /* ocean sphere with light from upper-left */
+    radial-gradient(circle at 34% 30%, #7cc0ee 0%, #2e74b5 45%, #1a4d80 78%, #0c2c4e 100%);
+  box-shadow: inset -16px -14px 34px rgba(0,0,0,0.6),
+              inset 8px 8px 18px rgba(255,255,255,0.18),
+              0 0 16px rgba(70,140,210,0.28);
+}
+.globe-left  { left: -50px; }
+.globe-right { right: -50px; }
+/* faint atmosphere rim */
+.globe::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: #0b1430;
-  /* JS shifts this via --phase-shift (-100% full new .. 0 full moon .. 100%) */
-  transform: translateX(var(--phase-shift, 100%));
-  box-shadow: inset 6px 0 10px rgba(0,0,0,0.4);
-  transition: transform 1s linear;
+  box-shadow: inset 0 0 10px 2px rgba(150,210,255,0.25);
 }
 .moon-arch-label {
   font-size: 13px;

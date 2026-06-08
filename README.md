@@ -60,6 +60,25 @@ Settings persist via `localStorage`.
 > Browsers require a user gesture before audio can play. The first click anywhere in the
 > settings drawer (or the Test button) unlocks sound.
 
+### Moon dial
+
+Like a real lunar dial, a moon transits the night-sky arch between **two earth globes**.
+Position alone encodes the phase: the moon rises behind the right globe (waxing crescent),
+is fully clear at the top of the arch (full moon), then sets behind the left globe (waning
+crescent). The phase tracks the real synodic month for the simulated date.
+
+### Deep-link / testing URL params
+
+Append to the URL to preset state (handy for testing):
+
+- `?theme=light|dark|auto`
+- `?chime=westminster|whittington|stmichael|silent`
+- `?speed=1|60|300|3600`
+- `?time=HH:MM` — jump the clock to a time
+- `?moon=0..1` — pin the moon phase (`0`/`1` = new, `0.5` = full)
+
+Example: `http://localhost:8473/?theme=auto&speed=3600&moon=0.5`
+
 ## Files
 
 ```

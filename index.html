@@ -23,13 +23,18 @@
         </div>
 
         <div class="hood-body">
-          <!-- Moon-phase arch sits above the main dial -->
+          <!-- Moon-phase arch sits above the main dial. Classic lunar dial:
+               a moon transits the night sky between two earth globes (the
+               "lunar humps"), which occlude it at the edges so it appears to
+               wax (rising at right) and wane (setting at left). -->
           <div class="moon-arch">
             <div class="moon-arch-inner">
               <div class="moon-arch-sky"></div>
-              <div id="moonDisc" class="moon-disc"></div>
-              <div class="moon-arch-mask"></div>
               <div class="moon-arch-stars"></div>
+              <div id="moonDisc" class="moon-disc"></div>
+              <!-- Two opposite earth globes flank the arch -->
+              <div class="globe globe-right" aria-hidden="true"></div>
+              <div class="globe globe-left" aria-hidden="true"></div>
             </div>
             <div class="moon-arch-label">LUNAR PHASE</div>
           </div>

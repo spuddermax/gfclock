@@ -272,5 +272,6 @@
       d.setHours(hh || 0, mm || 0, 0, 0);
       Clock.setTime(d.getTime());
     }
+    if (params.has('moon')) Clock.setMoonPhase(Number(params.get('moon')));
   });
 })();
