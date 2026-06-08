@@ -68,14 +68,15 @@ const Clock = (() => {
     // The moon transits the arch between the two earth globes. Position alone
     // encodes the phase, exactly like a real lunar dial: the globes occlude it
     // at the horizons (crescents) and it's fully clear at the top (full moon).
-    //   phase 0   (new)  -> hidden behind the RIGHT globe, near the horizon
+    // It moves left while waxing and right while waning (so the visible side is
+    // lit correctly: waxing crescent on the left shows its right edge).
+    //   phase 0   (new)  -> hidden behind the LEFT globe, near the horizon
     //   phase 0.5 (full) -> centered at the top of the arch
-    //   phase 1   (new)  -> hidden behind the LEFT globe, near the horizon
+    //   phase 1   (new)  -> hidden behind the RIGHT globe, near the horizon
     const ARCH_W = 360 - 16;  // inner width (minus the 8px brass border each side)
     const ARCH_H = 190 - 8;
     const MOON = 66;
-    const xFrac = 1 - phase;                 // 1 = right edge, 0 = left edge
-    const cx = 30 + xFrac * (ARCH_W - 60);   // moon centre x
+    const cx = 30 + phase * (ARCH_W - 60);   // moon centre x (0 -> left, 1 -> right)
     const arc = Math.sin(phase * Math.PI);   // 0 at horizons, 1 at top-centre
     const cy = ARCH_H - 28 - arc * (ARCH_H - 90); // moon centre y (from top)
     el.moonDisc.style.left = `${cx - MOON / 2}px`;
