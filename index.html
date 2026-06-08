@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grandfather Clock</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-theme="light">
+  <!-- Auto day/night sky layer (only visible in Auto theme) -->
+  <div id="sky"></div>
+
+  <!-- Fixed 1080x1920 design canvas, scaled to fit the viewport -->
+  <div id="viewport">
+    <div id="stage">
+
+      <!-- ===================== HOOD / BONNET ===================== -->
+      <div class="hood">
+        <div class="pediment">
+          <span class="finial finial-left"></span>
+          <span class="finial finial-center"></span>
+          <span class="finial finial-right"></span>
+        </div>
+
+        <div class="hood-body">
+          <!-- Moon-phase arch sits above the main dial -->
+          <div class="moon-arch">
+            <div class="moon-arch-inner">
+              <div class="moon-arch-sky"></div>
+              <div id="moonDisc" class="moon-disc"></div>
+              <div class="moon-arch-mask"></div>
+              <div class="moon-arch-stars"></div>
+            </div>
+            <div class="moon-arch-label">LUNAR PHASE</div>
+          </div>
+
+          <!-- ===================== DIAL ===================== -->
+          <div class="dial-frame">
+            <div class="dial">
+              <div class="dial-face">
+                <div class="maker">Howard Miller</div>
+                <div class="maker-sub">Triple Chime &middot; 2004</div>
+
+                <!-- Roman numeral chapter ring (filled by JS) -->
+                <div id="numerals" class="numerals"></div>
+                <!-- Minute tick ring (filled by JS) -->
+                <div id="ticks" class="ticks"></div>
+
+                <!-- Date window -->
+                <div id="dateWindow" class="date-window">
+                  <span id="dateText">—</span>
+                </div>
+
+                <!-- Hands -->
+                <div class="hands">
+                  <div id="hourHand" class="hand hour-hand"></div>
+                  <div id="minuteHand" class="hand minute-hand"></div>
+                  <div id="secondHand" class="hand second-hand"></div>
+                  <div class="hand-cap"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== TRUNK / WAIST ===================== -->
+      <div class="trunk">
+        <div class="glass-door">
+          <div class="glass-sheen"></div>
+
+          <!-- Three weights -->
+          <div class="weights">
+            <div class="weight"><span class="cable"></span><span class="bob"></span></div>
+            <div class="weight"><span class="cable"></span><span class="bob"></span></div>
+            <div class="weight"><span class="cable"></span><span class="bob"></span></div>
+          </div>
+
+          <!-- Pendulum -->
+          <div id="pendulum" class="pendulum">
+            <div class="pendulum-rod"></div>
+            <div class="pendulum-bob"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== BASE / PLINTH ===================== -->
+      <div class="base">
+        <div class="base-panel"></div>
+        <div class="feet">
+          <span class="foot"></span>
+          <span class="foot"></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================== SETTINGS ===================== -->
+  <button id="gearBtn" class="gear-btn" title="Settings" aria-label="Settings">⚙</button>
+
+  <div id="drawer" class="drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <h2>Clock Settings</h2>
+      <button id="closeDrawer" class="close-btn" aria-label="Close">×</button>
+    </div>
+
+    <div class="drawer-body">
+
+      <section class="ctl-group">
+        <h3>Background</h3>
+        <div class="seg" id="themeSeg">
+          <button data-theme="light" class="seg-btn">Light</button>
+          <button data-theme="dark" class="seg-btn">Dark</button>
+          <button data-theme="auto" class="seg-btn">Auto</button>
+        </div>
+        <p class="hint">Auto simulates day/night light for the current (simulated) time.</p>
+      </section>
+
+      <section class="ctl-group">
+        <h3>Chime Melody</h3>
+        <div class="seg col" id="chimeSeg">
+          <button data-chime="westminster" class="seg-btn">Westminster <small>(real recording)</small></button>
+          <button data-chime="whittington" class="seg-btn">Whittington <small>(synth)</small></button>
+          <button data-chime="stmichael" class="seg-btn">St. Michael <small>(synth)</small></button>
+          <button data-chime="silent" class="seg-btn">Silent</button>
+        </div>
+      </section>
+
+      <section class="ctl-group">
+        <h3>Sound</h3>
+        <label class="row">
+          <span>Mute all</span>
+          <input type="checkbox" id="muteChk" />
+        </label>
+        <label class="row">
+          <span>Volume</span>
+          <input type="range" id="volRange" min="0" max="100" value="70" />
+        </label>
+        <label class="row">
+          <span>Auto night silence<br /><small>10:15 PM – 7:15 AM</small></span>
+          <input type="checkbox" id="nightChk" checked />
+        </label>
+        <label class="row">
+          <span>Ticking sound<br /><small>per-second escapement tick</small></span>
+          <input type="checkbox" id="tickChk" checked />
+        </label>
+        <label class="row">
+          <span>Tick volume</span>
+          <input type="range" id="tickVolRange" min="0" max="100" value="60" />
+        </label>
+        <button id="testChime" class="action-btn">Test chime &amp; strike</button>
+      </section>
+
+      <section class="ctl-group">
+        <h3>Display</h3>
+        <label class="row">
+          <span>Show seconds hand</span>
+          <input type="checkbox" id="secondsChk" checked />
+        </label>
+      </section>
+
+      <section class="ctl-group">
+        <h3>Time Speed (for testing)</h3>
+        <div class="seg wrap" id="speedSeg">
+          <button data-speed="1" class="seg-btn">1×</button>
+          <button data-speed="60" class="seg-btn">60×</button>
+          <button data-speed="300" class="seg-btn">300×</button>
+          <button data-speed="3600" class="seg-btn">3600×</button>
+        </div>
+        <p class="hint">Chimes auto-mute above 4× to avoid overlap (the bell still flashes).</p>
+        <div class="row">
+          <label for="setTime">Jump to time</label>
+          <input type="time" id="setTime" />
+          <button id="applyTime" class="action-btn small">Set</button>
+        </div>
+        <button id="resetTime" class="action-btn">Reset to now</button>
+      </section>
+
+      <section class="ctl-group">
+        <div class="clock-readout">
+          <div id="bigTime" class="big-time">--:--:--</div>
+          <div id="speedReadout" class="speed-readout">1× speed</div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="js/audio.js"></script>
+  <script src="js/clock.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

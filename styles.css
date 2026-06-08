@@ -1,0 +1,563 @@
+/* ===========================================================
+   Grandfather Clock — vanilla CSS
+   Designed on a fixed 1080 x 1920 canvas, scaled to fit.
+   =========================================================== */
+
+:root {
+  /* Theme variables (overridden per data-theme) */
+  --bg: #ffffff;
+  --letterbox: #f2f2f2;
+  --ambient: 1;          /* brightness multiplier applied to the whole clock */
+  --shadow: rgba(0,0,0,0.25);
+
+  /* Wood tones */
+  --wood-light: #6b4423;
+  --wood-mid:   #4e2f17;
+  --wood-dark:  #2e1a0c;
+  --wood-edge:  #1c0f06;
+  --brass:      #d9b14a;
+  --brass-dark: #8a6a1d;
+  --brass-lite: #f6e6a8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--letterbox);
+  font-family: "Georgia", "Times New Roman", serif;
+}
+
+/* ---------- Themes ---------- */
+body[data-theme="light"] {
+  --bg: #ffffff;
+  --letterbox: #ececec;
+  --ambient: 1;
+}
+body[data-theme="dark"] {
+  --bg: #14171c;
+  --letterbox: #0a0c10;
+  --ambient: 0.82;
+}
+/* Auto theme colors are set inline by JS via the #sky element + --ambient */
+body[data-theme="auto"] {
+  --letterbox: transparent;
+}
+
+/* ---------- Day/night sky (auto theme) ---------- */
+#sky {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: none;
+  background: linear-gradient(180deg, #0a1026 0%, #0a1026 100%);
+  transition: background 1.5s linear;
+}
+body[data-theme="auto"] #sky { display: block; }
+
+/* ---------- Viewport scaler ---------- */
+#viewport {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+body[data-theme="auto"] #viewport { background: transparent; }
+
+#stage {
+  width: 1080px;
+  height: 1920px;
+  transform-origin: center center;
+  position: relative;
+  filter: brightness(var(--ambient));
+  transition: filter 1.5s linear;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ===========================================================
+   HOOD / BONNET
+   =========================================================== */
+.hood {
+  width: 760px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 3;
+}
+
+/* Swan-neck pediment */
+.pediment {
+  width: 760px;
+  height: 150px;
+  position: relative;
+  background:
+    radial-gradient(120px 120px at 50% 150px, transparent 96px, var(--wood-mid) 98px) ,
+    linear-gradient(180deg, var(--wood-light), var(--wood-dark));
+  border-top-left-radius: 380px 150px;
+  border-top-right-radius: 380px 150px;
+  box-shadow: inset 0 6px 12px rgba(255,255,255,0.15), inset 0 -10px 18px rgba(0,0,0,0.4);
+  border-bottom: 8px solid var(--wood-edge);
+}
+
+.finial {
+  position: absolute;
+  bottom: 96px;
+  width: 26px;
+  height: 70px;
+  background: linear-gradient(180deg, var(--brass-lite), var(--brass), var(--brass-dark));
+  border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+}
+.finial::after {
+  content: "";
+  position: absolute;
+  top: -22px; left: 50%; transform: translateX(-50%);
+  width: 18px; height: 24px; border-radius: 50%;
+  background: linear-gradient(180deg, var(--brass-lite), var(--brass-dark));
+}
+.finial-center { left: 50%; transform: translateX(-50%); bottom: 120px; }
+.finial-left  { left: 70px; }
+.finial-right { right: 70px; }
+
+.hood-body {
+  width: 700px;
+  background: linear-gradient(90deg, var(--wood-dark), var(--wood-mid) 12%, var(--wood-light) 50%, var(--wood-mid) 88%, var(--wood-dark));
+  border: 10px solid var(--wood-edge);
+  border-top: none;
+  padding: 24px 0 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 12px 30px var(--shadow);
+}
+
+/* ---------- Moon-phase arch ---------- */
+.moon-arch {
+  width: 360px;
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.moon-arch-inner {
+  width: 360px;
+  height: 190px;
+  border-radius: 360px 360px 0 0 / 190px 190px 0 0;
+  border: 8px solid var(--brass-dark);
+  border-bottom: none;
+  position: relative;
+  overflow: hidden;
+  background: #0b1430;
+}
+.moon-arch-sky {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 120%, #1b2b5e 0%, #0b1430 60%, #060b1e 100%);
+}
+.moon-arch-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 40px 40px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 120px 70px, #fff, transparent),
+    radial-gradient(1px 1px at 220px 30px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 300px 60px, #fff, transparent),
+    radial-gradient(1px 1px at 180px 100px, #fff, transparent),
+    radial-gradient(1px 1px at 80px 110px, #fff, transparent);
+  opacity: 0.8;
+}
+/* The moon disc travels across the arch; JS sets --moon-x (0..1) and --moon-phase */
+.moon-disc {
+  position: absolute;
+  bottom: -34px;
+  left: 50%;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 38%, #fffef0 0%, #f3edce 55%, #cfc69a 100%);
+  box-shadow: 0 0 24px 6px rgba(255,250,210,0.55), inset -8px -6px 14px rgba(120,110,70,0.45);
+  transform: translate(-50%, 0);
+}
+/* Shadow overlay that creates the phase (a dark disc offset across the moon) */
+.moon-disc::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #0b1430;
+  /* JS shifts this via --phase-shift (-100% full new .. 0 full moon .. 100%) */
+  transform: translateX(var(--phase-shift, 100%));
+  box-shadow: inset 6px 0 10px rgba(0,0,0,0.4);
+  transition: transform 1s linear;
+}
+.moon-arch-label {
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: var(--brass);
+  margin-top: 6px;
+}
+
+/* ---------- Dial ---------- */
+.dial-frame {
+  width: 540px;
+  height: 540px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brass-lite), var(--brass) 40%, var(--brass-dark));
+  padding: 22px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5), inset 0 0 14px rgba(0,0,0,0.35);
+}
+.dial {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%, #fbf7ec, #efe7d2 70%, #ddd0b0);
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.25);
+  position: relative;
+}
+.dial-face { position: absolute; inset: 0; border-radius: 50%; }
+
+.maker {
+  position: absolute;
+  top: 132px; left: 0; right: 0;
+  text-align: center;
+  font-size: 26px;
+  font-style: italic;
+  color: #5b4a2c;
+}
+.maker-sub {
+  position: absolute;
+  top: 168px; left: 0; right: 0;
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: #7a6743;
+}
+
+/* Roman numerals positioned around the ring (transforms set by JS) */
+.numerals, .ticks, .hands { position: absolute; inset: 0; }
+.numeral {
+  position: absolute;
+  top: 50%; left: 50%;
+  font-size: 34px;
+  font-weight: bold;
+  color: #2b2113;
+  transform-origin: center;
+}
+.tick {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 2px; height: 10px;
+  background: #4a3c22;
+  transform-origin: 50% 0;
+}
+.tick.major { width: 4px; height: 16px; background: #2b2113; }
+
+/* Date window near the 6 o'clock position */
+.date-window {
+  position: absolute;
+  bottom: 110px; left: 50%;
+  transform: translateX(-50%);
+  min-width: 120px;
+  text-align: center;
+  padding: 4px 10px;
+  font-size: 15px;
+  letter-spacing: 1px;
+  color: #3a2e18;
+  background: rgba(255,255,255,0.4);
+  border: 1px solid #b8a572;
+  border-radius: 4px;
+}
+
+/* ---------- Hands ---------- */
+.hand {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  transform-origin: 50% 100%;
+  border-radius: 6px;
+}
+.hour-hand {
+  width: 14px; height: 130px;
+  margin-left: -7px;
+  background: linear-gradient(180deg, #1a1a1a, #333);
+  box-shadow: 0 0 4px rgba(0,0,0,0.4);
+}
+.minute-hand {
+  width: 10px; height: 195px;
+  margin-left: -5px;
+  background: linear-gradient(180deg, #1a1a1a, #333);
+  box-shadow: 0 0 4px rgba(0,0,0,0.4);
+}
+.second-hand {
+  width: 3px; height: 215px;
+  margin-left: -1.5px;
+  background: #9a1b1b;
+}
+.hand-cap {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 22px; height: 22px;
+  margin: -11px 0 0 -11px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #555, #111);
+  box-shadow: 0 0 4px rgba(0,0,0,0.6);
+}
+
+/* ===========================================================
+   TRUNK / WAIST
+   =========================================================== */
+.trunk {
+  width: 600px;
+  flex: 1;
+  margin-top: -10px;
+  background: linear-gradient(90deg, var(--wood-dark), var(--wood-mid) 14%, var(--wood-light) 50%, var(--wood-mid) 86%, var(--wood-dark));
+  border: 14px solid var(--wood-edge);
+  border-top: none;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding: 30px;
+  box-shadow: 0 12px 30px var(--shadow);
+  position: relative;
+  z-index: 2;
+}
+.glass-door {
+  flex: 1;
+  position: relative;
+  background:
+    linear-gradient(135deg, rgba(180,200,220,0.18), rgba(60,70,90,0.30) 50%, rgba(20,25,35,0.45));
+  border: 10px solid var(--brass-dark);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.55);
+}
+.glass-sheen {
+  position: absolute;
+  top: -10%; left: -30%;
+  width: 50%; height: 130%;
+  background: linear-gradient(105deg, transparent, rgba(255,255,255,0.10) 45%, rgba(255,255,255,0.18) 50%, transparent 60%);
+  transform: rotate(8deg);
+  pointer-events: none;
+}
+
+/* Weights */
+.weights {
+  position: absolute;
+  top: 12px; left: 0; right: 0;
+  display: flex;
+  justify-content: space-evenly;
+  z-index: 1;
+}
+.weight { display: flex; flex-direction: column; align-items: center; }
+.weight .cable {
+  width: 3px; height: 120px;
+  background: linear-gradient(90deg, #6b6b6b, #cfcfcf, #6b6b6b);
+}
+.weight .bob {
+  width: 56px; height: 230px;
+  border-radius: 12px / 8px;
+  background: linear-gradient(90deg, var(--brass-dark), var(--brass-lite) 45%, var(--brass) 55%, var(--brass-dark));
+  box-shadow: inset 0 0 12px rgba(0,0,0,0.4), 0 6px 12px rgba(0,0,0,0.5);
+  border-radius: 10px;
+}
+
+/* Pendulum (anchored at top center, swings) */
+.pendulum {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform-origin: top center;
+  z-index: 2;
+  animation: swing 2s ease-in-out infinite;
+}
+.pendulum-rod {
+  width: 6px;
+  height: 470px;
+  margin: 0 auto;
+  background: linear-gradient(90deg, #7c7c7c, #e6e6e6, #7c7c7c);
+}
+.pendulum-bob {
+  width: 130px; height: 130px;
+  margin: -14px auto 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 35%, var(--brass-lite), var(--brass) 45%, var(--brass-dark));
+  box-shadow: inset -10px -10px 22px rgba(0,0,0,0.45), 0 8px 16px rgba(0,0,0,0.5);
+  border: 4px solid var(--brass-dark);
+}
+@keyframes swing {
+  0%   { transform: translateX(-50%) rotate(9deg); }
+  50%  { transform: translateX(-50%) rotate(-9deg); }
+  100% { transform: translateX(-50%) rotate(9deg); }
+}
+
+/* ===========================================================
+   BASE / PLINTH
+   =========================================================== */
+.base {
+  width: 700px;
+  background: linear-gradient(90deg, var(--wood-dark), var(--wood-mid) 14%, var(--wood-light) 50%, var(--wood-mid) 86%, var(--wood-dark));
+  border: 12px solid var(--wood-edge);
+  border-top: none;
+  padding: 26px 30px 0;
+  box-shadow: 0 14px 34px var(--shadow);
+  position: relative;
+  z-index: 3;
+}
+.base-panel {
+  height: 150px;
+  border: 6px solid var(--wood-edge);
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--wood-light), var(--wood-dark));
+  box-shadow: inset 0 0 24px rgba(0,0,0,0.5);
+}
+.feet {
+  display: flex;
+  justify-content: space-between;
+  margin: 16px -10px 0;
+}
+.foot {
+  width: 90px; height: 46px;
+  background: linear-gradient(180deg, var(--wood-mid), var(--wood-edge));
+  border-radius: 0 0 10px 10px;
+}
+
+/* ===========================================================
+   STRIKE FLASH (visual cue when a chime/strike fires)
+   =========================================================== */
+.dial-frame.flash {
+  animation: dialFlash 0.5s ease-out;
+}
+@keyframes dialFlash {
+  0%   { box-shadow: 0 8px 24px rgba(0,0,0,0.5), 0 0 0 0 rgba(255,230,140,0.9); }
+  100% { box-shadow: 0 8px 24px rgba(0,0,0,0.5), 0 0 60px 20px rgba(255,230,140,0); }
+}
+
+/* ===========================================================
+   SETTINGS DRAWER
+   =========================================================== */
+.gear-btn {
+  position: fixed;
+  top: 18px; right: 18px;
+  z-index: 20;
+  width: 54px; height: 54px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(40,40,40,0.55);
+  color: #fff;
+  font-size: 28px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: transform 0.3s, background 0.2s;
+}
+.gear-btn:hover { background: rgba(40,40,40,0.8); transform: rotate(45deg); }
+
+.drawer {
+  position: fixed;
+  top: 0; right: 0;
+  z-index: 30;
+  width: 360px;
+  max-width: 90vw;
+  height: 100%;
+  background: rgba(22,24,28,0.96);
+  color: #eee;
+  box-shadow: -8px 0 30px rgba(0,0,0,0.5);
+  transform: translateX(100%);
+  transition: transform 0.32s ease;
+  overflow-y: auto;
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.drawer.open { transform: translateX(0); }
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  position: sticky; top: 0;
+  background: rgba(22,24,28,0.98);
+}
+.drawer-head h2 { font-size: 18px; font-weight: 600; }
+.close-btn {
+  background: none; border: none; color: #bbb;
+  font-size: 30px; line-height: 1; cursor: pointer;
+}
+.close-btn:hover { color: #fff; }
+
+.drawer-body { padding: 8px 20px 40px; }
+.ctl-group { padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.ctl-group h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #9aa; margin-bottom: 12px; }
+
+.seg { display: flex; gap: 6px; }
+.seg.col { flex-direction: column; }
+.seg.wrap { flex-wrap: wrap; }
+.seg-btn {
+  flex: 1;
+  padding: 10px 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.15s, border 0.15s;
+}
+.seg-btn:hover { background: rgba(255,255,255,0.12); }
+.seg-btn small { color: #99a; font-size: 11px; }
+.seg-btn.active small { color: rgba(255,255,255,0.85); }
+.seg-btn.active {
+  background: #b88a2a;
+  border-color: #d9b14a;
+  color: #fff;
+  font-weight: 600;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 10px 0;
+  font-size: 14px;
+}
+.row small { color: #889; font-size: 11px; }
+.row input[type="range"] { flex: 1; }
+.row input[type="time"] {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #eee; padding: 6px; border-radius: 6px;
+}
+
+.action-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #eee;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.action-btn.small { width: auto; margin: 0; padding: 6px 12px; }
+.action-btn:hover { background: rgba(255,255,255,0.16); }
+
+.hint { font-size: 12px; color: #889; margin-top: 8px; line-height: 1.4; }
+
+.clock-readout { text-align: center; }
+.big-time {
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 2px;
+  color: #d9b14a;
+}
+.speed-readout { font-size: 13px; color: #9aa; margin-top: 4px; }
