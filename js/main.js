@@ -8,6 +8,7 @@
 
   const defaults = {
     theme: 'light',
+    cloudDensity: 20, // percent; 20% == the four original clouds
     chime: 'westminster',
     muted: false,
     volume: 70,
@@ -26,6 +27,7 @@
   // URL query overrides (handy for deep-linked testing, e.g. ?theme=auto&speed=3600&time=11:59)
   const params = new URLSearchParams(location.search);
   if (params.has('theme')) settings.theme = params.get('theme');
+  if (params.has('clouds')) settings.cloudDensity = Number(params.get('clouds'));
   if (params.has('chime')) settings.chime = params.get('chime');
   if (params.has('speed')) settings.speed = Number(params.get('speed')) || settings.speed;
   if (params.has('tempo')) settings.chimeTempo = Number(params.get('tempo')) || settings.chimeTempo;
@@ -223,6 +225,8 @@
     el.drawer = document.getElementById('drawer');
     el.closeDrawer = document.getElementById('closeDrawer');
     el.themeSeg = document.getElementById('themeSeg');
+    el.cloudRange = document.getElementById('cloudRange');
+    el.cloudReadout = document.getElementById('cloudReadout');
     el.chimeSeg = document.getElementById('chimeSeg');
     el.speedSeg = document.getElementById('speedSeg');
     el.muteChk = document.getElementById('muteChk');
@@ -259,6 +263,15 @@
     if (theme !== 'auto') {
       document.getElementById('stage').style.removeProperty('--ambient');
     }
+    save();
+  }
+
+  function applyCloudDensity(pct) {
+    pct = Math.max(0, Math.min(100, Number(pct) || 0));
+    settings.cloudDensity = pct;
+    Clock.setCloudDensity(pct);
+    if (el.cloudRange) el.cloudRange.value = pct;
+    if (el.cloudReadout) el.cloudReadout.textContent = pct + '%';
     save();
   }
 
@@ -312,6 +325,7 @@
     el.themeSeg.addEventListener('click', (e) => {
       if (e.target.dataset.theme) applyTheme(e.target.dataset.theme);
     });
+    el.cloudRange.addEventListener('input', () => applyCloudDensity(Number(el.cloudRange.value)));
     el.chimeSeg.addEventListener('click', (e) => {
       if (e.target.dataset.chime) { ChimeAudio.unlock(); applyChime(e.target.dataset.chime); }
     });
@@ -406,6 +420,7 @@
   /* Push loaded settings into the UI controls. */
   function hydrate() {
     applyTheme(settings.theme);
+    applyCloudDensity(settings.cloudDensity);
     applyChime(settings.chime);
     applyTempo(settings.chimeTempo);
     applyPhraseGap(settings.phraseGap);

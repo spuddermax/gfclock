@@ -65,6 +65,50 @@ const Clock = (() => {
     }
   }
 
+  /* ---------- Clouds (density-driven) ---------- */
+  // Up to MAX_CLOUDS at 100% density. The first four specs reproduce the
+  // original hand-placed clouds, so 20% density == the previous look.
+  const MAX_CLOUDS = 20;
+  const CLOUD_SPECS = (() => {
+    const specs = [
+      { top: 12, w: 240, h: 84,  op: 0.92, dur: 78,  delay: -12 },
+      { top: 25, w: 180, h: 64,  op: 0.80, dur: 104, delay: -55 },
+      { top: 6,  w: 320, h: 108, op: 0.85, dur: 132, delay: -88 },
+      { top: 32, w: 150, h: 56,  op: 0.72, dur: 92,  delay: -40 },
+    ];
+    // Fill the rest with deterministic variety (stable across rebuilds).
+    for (let i = 4; i < MAX_CLOUDS; i++) {
+      const w = 140 + (i * 53) % 200;
+      specs.push({
+        top: 3 + (i * 37) % 40,
+        w, h: Math.round(w * 0.34),
+        op: 0.62 + ((i * 17) % 34) / 100,
+        dur: 80 + (i * 29) % 75,
+        delay: -((i * 23) % 130),
+      });
+    }
+    return specs;
+  })();
+
+  function buildClouds(pct) {
+    if (!el.clouds) return;
+    const d = Math.max(0, Math.min(100, Number(pct) || 0));
+    const count = Math.round(d / 100 * MAX_CLOUDS);
+    el.clouds.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const s = CLOUD_SPECS[i];
+      const c = document.createElement('div');
+      c.className = 'cloud';
+      c.style.top = s.top + '%';
+      c.style.width = s.w + 'px';
+      c.style.height = s.h + 'px';
+      c.style.opacity = s.op;
+      c.style.animationDuration = s.dur + 's';
+      c.style.animationDelay = s.delay + 's';
+      el.clouds.appendChild(c);
+    }
+  }
+
   /* ---------- Moon phase ---------- */
   let moonOverride = null;  // testing: pin the phase (0..1) via Clock.setMoonPhase
   function updateMoon(date) {
@@ -200,6 +244,7 @@ const Clock = (() => {
   function init() {
     cache();
     buildDial();
+    buildClouds(20); // default; main.js overrides from saved settings
     fit();
     window.addEventListener('resize', fit);
     requestAnimationFrame(frame);
@@ -211,6 +256,7 @@ const Clock = (() => {
   function setMoonPhase(p) { moonOverride = (p == null ? null : ((p % 1) + 1) % 1); }
   function setOnTick(fn) { onTick = fn; }
   function showSeconds(show) { el.subSeconds.style.display = show ? '' : 'none'; }
+  function setCloudDensity(pct) { buildClouds(pct); }
 
-  return { init, setSpeed, getSpeed, setTime, getTime, setMoonPhase, setOnTick, showSeconds };
+  return { init, setSpeed, getSpeed, setTime, getTime, setMoonPhase, setOnTick, showSeconds, setCloudDensity };
 })();
