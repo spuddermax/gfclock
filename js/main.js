@@ -63,6 +63,9 @@
     strike: { el: null, drop: 0.40, winding: false },
     chime:  { el: null, drop: 0.60, winding: false },
   };
+  // While winding, play the tick (ratchet) sound 4×/second.
+  const WIND_TICK_MS = 250;
+  let windTickAccum = 0;
 
   function initWeights() {
     weight.time.el   = document.getElementById('wTime');
@@ -101,14 +104,27 @@
       weight.time.drop = Math.min(1, weight.time.drop + dtSim / FULL_WIND_MS);
     }
     // Winding pulls a weight back up to the top at a steady real-time rate.
+    let anyWinding = false;
     for (const k in weight) {
       const w = weight[k];
       if (w.winding) {
+        anyWinding = true;
         w.drop -= dtReal / WIND_FULL_MS;
         if (w.drop <= 0) { w.drop = 0; w.winding = false; }
       }
     }
     applyWeights();
+
+    // Ratchet: play the tick sound 4×/second while any weight is winding.
+    if (anyWinding) {
+      windTickAccum += dtReal;
+      while (windTickAccum >= WIND_TICK_MS) {
+        windTickAccum -= WIND_TICK_MS;
+        if (!settings.muted) ChimeAudio.playTick();
+      }
+    } else {
+      windTickAccum = 0;
+    }
   }
 
   /* Returns true if the simulated time falls in the night-silence window. */
@@ -371,10 +387,12 @@
       const which = btn.dataset.arbor;
       const start = (e) => {
         e.preventDefault();
+        ChimeAudio.unlock(); // this press is the user gesture that unlocks audio
         // Capture the pointer so a release anywhere still stops winding.
         if (btn.setPointerCapture && e.pointerId != null) {
           try { btn.setPointerCapture(e.pointerId); } catch (_) {}
         }
+        windTickAccum = WIND_TICK_MS; // fire the first ratchet tick right away
         setWinding(which, true);
       };
       const stop = () => setWinding(which, false);
