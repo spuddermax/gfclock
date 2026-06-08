@@ -42,7 +42,7 @@ Click the **⚙ gear** (top-right) to open the settings drawer:
 
 | Setting | Notes |
 | --- | --- |
-| **Background** | `Light` (white), `Dark`, or `Auto` — Auto simulates day/night sky + ambient light from the (simulated) time. |
+| **Background** | `Light` (white), `Dark`, or `Auto` — Auto simulates day/night sky + ambient light from the (simulated) time, with drifting clouds, a snow-capped mountain range, and stars that come out at night. |
 | **Chime melody** | `Westminster`, `Whittington`, `St. Michael`, or `Silent` — the triple-chime selector. |
 | **Chime tempo** | Slider (50–150%) for how fast the notes play within a phrase. |
 | **Pause between phrases** | Slider (0–3 s, default **1.0 s**) for the silence before each next phrase. Absolute — not affected by tempo. |

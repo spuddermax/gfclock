@@ -92,6 +92,71 @@ body[data-theme="auto"] #sky { display: block; }
   50%      { opacity: 1; }
 }
 
+/* ---------- Drifting clouds (auto theme) ---------- */
+#clouds {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;                 /* JS fades clouds in with daylight */
+  transition: opacity 1.5s linear;
+}
+.cloud {
+  position: absolute;
+  width: 240px; height: 84px;
+  /* Overlapping soft white lobes + a wide flat base = a puffy cumulus. */
+  background:
+    radial-gradient(62px 62px at 24% 66%, #fff 0 70%, transparent 72%),
+    radial-gradient(84px 84px at 45% 44%, #fff 0 72%, transparent 74%),
+    radial-gradient(72px 72px at 64% 58%, #fff 0 72%, transparent 74%),
+    radial-gradient(56px 56px at 82% 70%, #fff 0 70%, transparent 72%),
+    radial-gradient(150px 46px at 52% 86%, #fff 0 76%, transparent 79%);
+  filter: blur(3px) drop-shadow(0 6px 10px rgba(0,0,0,0.08));
+  will-change: transform;
+}
+/* Each cloud: its own lane (top), size, speed and a negative delay so they
+   start already spread across the sky rather than all entering from the left. */
+.cloud-1 { top: 12%; width: 240px; height: 84px; opacity: 0.92; animation: drift  78s linear infinite;  animation-delay: -12s; }
+.cloud-2 { top: 25%; width: 180px; height: 64px; opacity: 0.80; animation: drift 104s linear infinite;  animation-delay: -55s; }
+.cloud-3 { top:  6%; width: 320px; height: 108px; opacity: 0.85; animation: drift 132s linear infinite; animation-delay: -88s; }
+.cloud-4 { top: 32%; width: 150px; height: 56px; opacity: 0.72; animation: drift  92s linear infinite;  animation-delay: -40s; }
+@keyframes drift {
+  from { transform: translateX(-340px); }
+  to   { transform: translateX(calc(100vw + 340px)); }
+}
+
+/* ---------- Snow-capped mountains (auto theme) ---------- */
+#mountains {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 380px;
+  pointer-events: none;
+  transition: filter 1.5s linear; /* JS dims the range at night */
+}
+.range {
+  position: absolute;
+  left: -2%; right: -2%; bottom: 0;
+  width: 104%;
+}
+/* Snow line: peaks rising above it get white caps; lower ridges stay rock. */
+.range-back {
+  height: 340px;
+  opacity: 0.9;
+  background: linear-gradient(to top,
+    #3a4a66 0%, #46587a 40%, #74849f 55%, #cfe0f1 61%, #ffffff 100%);
+  clip-path: polygon(0% 100%,
+    0% 58%, 8% 78%, 16% 36%, 24% 70%, 33% 20%, 43% 66%, 52% 28%,
+    62% 72%, 71% 38%, 80% 74%, 89% 48%, 96% 70%, 100% 54%, 100% 100%);
+}
+.range-front {
+  height: 250px;
+  background: linear-gradient(to top,
+    #27344a 0%, #313f59 46%, #5a6b88 60%, #dbe7f3 66%, #ffffff 100%);
+  clip-path: polygon(0% 100%,
+    0% 74%, 6% 84%, 13% 44%, 22% 78%, 31% 30%, 41% 80%, 50% 40%,
+    60% 82%, 69% 52%, 79% 84%, 88% 58%, 96% 80%, 100% 70%, 100% 100%);
+}
+
 /* ---------- Viewport scaler ---------- */
 #viewport {
   position: fixed;

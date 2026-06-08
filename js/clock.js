@@ -30,6 +30,8 @@ const Clock = (() => {
     el.moonDisc = document.getElementById('moonDisc');
     el.sky = document.getElementById('sky');
     el.stars = document.getElementById('stars');
+    el.clouds = document.getElementById('clouds');
+    el.mountains = document.getElementById('mountains');
     el.stage = document.getElementById('stage');
   }
 
@@ -141,6 +143,15 @@ const Clock = (() => {
     // gone once it's bright enough (ambient ~0.85).
     const stars = Math.max(0, Math.min(1, (0.85 - ambient) / (0.85 - 0.6)));
     el.stars.style.opacity = stars.toFixed(3);
+    // Clouds fade in with daylight (opposite of the stars) and the mountains
+    // dim toward night so the whole scene tracks the time of day.
+    if (el.clouds) {
+      const clouds = Math.max(0, Math.min(0.92, (ambient - 0.6) / (1.05 - 0.6) * 0.92));
+      el.clouds.style.opacity = clouds.toFixed(3);
+    }
+    if (el.mountains) {
+      el.mountains.style.filter = `brightness(${Math.max(0.5, Math.min(1, ambient)).toFixed(3)})`;
+    }
   }
 
   /* ---------- Hands ---------- */
