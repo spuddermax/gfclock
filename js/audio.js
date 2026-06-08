@@ -266,8 +266,8 @@ const ChimeAudio = (() => {
     else loadBells().then(run);
   }
 
-  /* Short mechanical escapement "tick" — a brief filtered noise transient
-     plus a tiny wooden thump. Alternates pitch (tick/tock) each call. */
+  /* Short mechanical escapement "tick" — a brief, treble-only filtered noise
+     transient (no low-end thump). Alternates pitch (tick/tock) each call. */
   function playTick() {
     ensureCtx();
     if (!noiseBuf) {
@@ -279,31 +279,25 @@ const ChimeAudio = (() => {
     const t = ctx.currentTime;
     tockToggle = !tockToggle;
 
-    // Noise transient through a band-pass for the "click".
+    // Noise transient through a band-pass for the "click", with a high-pass
+    // ahead of it to remove any low-frequency body — treble only.
     const src = ctx.createBufferSource();
     src.buffer = noiseBuf;
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 2000;     // cut everything below ~2 kHz
+    hp.Q.value = 0.7;
     const bp = ctx.createBiquadFilter();
     bp.type = 'bandpass';
-    bp.frequency.value = tockToggle ? 2600 : 2000; // tick vs tock
-    bp.Q.value = 1.2;
+    bp.frequency.value = tockToggle ? 3400 : 2800; // tick vs tock (high)
+    bp.Q.value = 2.0;
     const g = ctx.createGain();
     const peak = 0.18;
     g.gain.setValueAtTime(peak, t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
-    src.connect(bp); bp.connect(g); g.connect(tickGain);
+    src.connect(hp); hp.connect(bp); bp.connect(g); g.connect(tickGain);
     src.start(t);
     src.stop(t + 0.06);
-
-    // Subtle low wooden thump under the click.
-    const osc = ctx.createOscillator();
-    const og = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = tockToggle ? 150 : 120;
-    og.gain.setValueAtTime(0.12, t);
-    og.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
-    osc.connect(og); og.connect(tickGain);
-    osc.start(t);
-    osc.stop(t + 0.06);
   }
 
   /* Strike the hour `count` times. Westminster uses the recorded gong;
