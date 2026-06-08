@@ -15,6 +15,19 @@ Designed for a **portrait 1080 × 1920** monitor, but it scales to fit any windo
 
 Then open <http://localhost:8473>. (Port **8473** is fixed in `start.sh`.)
 
+### From other computers on your network
+
+`start.sh` binds to all interfaces, so any device on the same Wi-Fi/LAN can
+reach the clock. On startup it prints the address to use, e.g.:
+
+```
+  Other computers: http://192.168.0.82:8473   (same Wi-Fi/LAN)
+```
+
+Open that URL on the other machine. If it doesn't connect, allow inbound TCP
+on port **8473** through this computer's firewall (e.g. `sudo ufw allow 8473/tcp`),
+and make sure both devices are on the same network.
+
 If `start.sh` isn't executable yet:
 
 ```bash
