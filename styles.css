@@ -466,7 +466,7 @@ body[data-theme="auto"] #viewport { background: transparent; }
 /* Weights */
 .weights {
   position: absolute;
-  top: 12px; left: 0; right: 0;
+  top: 0px; left: 0; right: 0;
   display: flex;
   justify-content: space-evenly;
   z-index: 1;
@@ -476,10 +476,10 @@ body[data-theme="auto"] #viewport { background: transparent; }
 .weight .cables {
   display: flex;
   justify-content: center;
-  gap: 33px;            /* line spacing = wrap diameter (cables tangent at the sides) */
+  gap: 34px;            /* line spacing = wrap diameter (cables tangent at the sides) */
 }
 .weight .cable {
-  width: 3px; height: 96px;
+  width: 3px; height: 97px;
   background: linear-gradient(90deg, #6b6b6b, #cfcfcf, #6b6b6b);
 }
 /* Pulley sheave — a brass wheel with 4 spokes and an axle hub. The negative
