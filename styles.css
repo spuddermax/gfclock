@@ -285,11 +285,11 @@ body[data-theme="auto"] #viewport { background: transparent; }
 .sub-tick {
   position: absolute;
   top: 50%; left: 50%;
-  width: 1.5px; height: 6px;
+  width: 1px; height: 4px;
   background: #6a5734;
   transform-origin: 50% 0;
 }
-.sub-tick.major { width: 2.5px; height: 9px; background: #2b2113; }
+.sub-tick.major { width: 2.5px; height: 8px; background: #2b2113; }
 .sub-label {
   position: absolute;
   top: 16px; left: 0; right: 0;

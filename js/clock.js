@@ -53,11 +53,11 @@ const Clock = (() => {
       tick.style.transform = `rotate(${i * 6}deg) translateY(-236px)`;
       el.ticks.appendChild(tick);
     }
-    // Seconds subdial: 12 marks (every 5 seconds), majors at the quarters.
-    for (let i = 0; i < 12; i++) {
+    // Seconds subdial: all 60 second marks, majors every 5 seconds.
+    for (let i = 0; i < 60; i++) {
       const t = document.createElement('div');
-      t.className = 'sub-tick' + (i % 3 === 0 ? ' major' : '');
-      t.style.transform = `rotate(${i * 30}deg) translateY(-46px)`;
+      t.className = 'sub-tick' + (i % 5 === 0 ? ' major' : '');
+      t.style.transform = `rotate(${i * 6}deg) translateY(-46px)`;
       el.subTicks.appendChild(t);
     }
   }
