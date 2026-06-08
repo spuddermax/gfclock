@@ -46,6 +46,71 @@
   let lastTickSec = null; // absolute floored second, for the per-second tick sound
   const AUDIO_SPEED_LIMIT = 4; // above this, suppress audio (visual flash only)
 
+  // ---- Weights (8-day movement) ----
+  // Each weight's `drop` runs 0 (fully wound, at the top) -> 1 (fully run down).
+  // The TIME weight descends continuously (full travel = 8 days). The STRIKE
+  // and CHIME weights descend per event, proportional to the work done, scaled
+  // so a normal week also runs them down in ~8 days.
+  const DAY_MS = 86400000;
+  const FULL_WIND_MS = 8 * DAY_MS;   // time weight: top -> bottom in 8 days
+  const UNIT_STRIKE = 1 / 1248;      // per gong  (156 gongs/day * 8 days)
+  const UNIT_CHIME  = 1 / 1920;      // per chime phrase (10 phrases/hr * 24 * 8)
+  const WIND_FULL_MS = 6000;         // real ms to wind a full run-down up to the top
+  const CABLE_MIN = 16;              // cable length (px) when fully wound
+  let weightTravel = 600;            // px of travel, measured at init
+  const weight = {
+    time:   { el: null, drop: 0.50, winding: false },
+    strike: { el: null, drop: 0.40, winding: false },
+    chime:  { el: null, drop: 0.60, winding: false },
+  };
+
+  function initWeights() {
+    weight.time.el   = document.getElementById('wTime');
+    weight.strike.el = document.getElementById('wStrike');
+    weight.chime.el  = document.getElementById('wChime');
+    const door = document.querySelector('.glass-door');
+    // Measure the non-cable height of a weight (pulley + hook + bob) at the
+    // minimum cable, then size the travel to the available door height.
+    for (const k in weight) weight[k].el.style.setProperty('--cable', CABLE_MIN + 'px');
+    const baseFixed = weight.time.el.offsetHeight - CABLE_MIN;
+    const avail = door.clientHeight - 16; // 8px headroom top + bottom
+    weightTravel = Math.max(120, avail - baseFixed - CABLE_MIN);
+    applyWeights();
+  }
+
+  function applyWeights() {
+    for (const k in weight) {
+      const drop = Math.max(0, Math.min(1, weight[k].drop));
+      const cable = CABLE_MIN + drop * weightTravel;
+      weight[k].el.style.setProperty('--cable', cable.toFixed(1) + 'px');
+    }
+  }
+
+  function depleteWeight(which, amount) {
+    const w = weight[which];
+    if (w) w.drop = Math.min(1, w.drop + amount);
+  }
+
+  function windWeight(which) {
+    if (weight[which]) weight[which].winding = true;
+  }
+
+  function updateWeights(dtSim, dtReal) {
+    // The going train always runs (unless we're actively winding it).
+    if (!weight.time.winding) {
+      weight.time.drop = Math.min(1, weight.time.drop + dtSim / FULL_WIND_MS);
+    }
+    // Winding pulls a weight back up to the top at a steady real-time rate.
+    for (const k in weight) {
+      const w = weight[k];
+      if (w.winding) {
+        w.drop -= dtReal / WIND_FULL_MS;
+        if (w.drop <= 0) { w.drop = 0; w.winding = false; }
+      }
+    }
+    applyWeights();
+  }
+
   /* Returns true if the simulated time falls in the night-silence window. */
   function isNightSilenced(date) {
     if (!settings.nightSilence) return false;
@@ -62,8 +127,11 @@
     frame.classList.add('flash');
   }
 
-  /* Called every frame by the clock with the current simulated Date. */
-  function onTick(date, speed) {
+  /* Called every frame by the clock with the current simulated Date and the
+     elapsed simulated/real ms since the previous frame. */
+  function onTick(date, speed, dtSim, dtReal) {
+    updateWeights(dtSim || 0, dtReal || 0);
+
     const h = date.getHours();
     const m = date.getMinutes();
     const quarter = Math.floor(m / 15); // 0,1,2,3
@@ -99,6 +167,16 @@
 
   function fireChime(date, quarter, speed) {
     if (settings.chime === 'silent') return;
+
+    // The chime/strike train trips every quarter/hour and its weight descends,
+    // whether or not the sound is audible (muted / night / fast-forward). The
+    // amount is proportional to the work: chime phrases now, gong count at :00.
+    const phrases = quarter === 0 ? 4 : quarter; // 1,2,3,4 phrases
+    depleteWeight('chime', phrases * UNIT_CHIME);
+    if (quarter === 0) {
+      const count = (date.getHours() % 12) || 12;
+      depleteWeight('strike', count * UNIT_STRIKE);
+    }
 
     const silenced = isNightSilenced(date);
     const audible = !silenced && !settings.muted && speed <= AUDIO_SPEED_LIMIT;
@@ -286,6 +364,11 @@
       Clock.setTime(Date.now());
       lastQuarterKey = null;
     });
+
+    // Winding arbors on the dial — click to wind the matching weight up.
+    document.querySelectorAll('.winder').forEach((btn) => {
+      btn.addEventListener('click', () => windWeight(btn.dataset.arbor));
+    });
   }
 
   /* Push loaded settings into the UI controls. */
@@ -316,6 +399,7 @@
     cacheUI();
     bind();
     hydrate();
+    initWeights();
 
     if (params.has('time')) {
       const [hh, mm] = params.get('time').split(':').map(Number);

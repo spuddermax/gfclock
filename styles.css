@@ -426,6 +426,40 @@ body[data-theme="auto"] #viewport { background: transparent; }
   box-shadow: 0 0 4px rgba(0,0,0,0.6);
 }
 
+/* The hands/numerals/ticks overlays must not intercept clicks meant for the
+   winding arbors beneath them (the arbors are drawn earlier so the hands
+   still sweep over them visually). */
+.numerals, .ticks, .hands, .date-window { pointer-events: none; }
+
+/* ---------- Winding arbors ---------- */
+.winder {
+  position: absolute;
+  width: 28px; height: 28px;
+  transform: translate(-50%, -50%);
+  padding: 0;
+  border: 2px solid var(--brass-dark);
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #e7d399, #b9912f 65%, #7c5f1e);
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.45);
+  cursor: pointer;
+  pointer-events: auto;
+}
+/* Square winding hole (the arbor) at the centre. */
+.winder::after {
+  content: "";
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 9px; height: 9px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: #241b0e;
+  box-shadow: inset 0 0 2px rgba(0,0,0,0.9);
+}
+.winder:hover  { filter: brightness(1.12); }
+.winder:active { filter: brightness(0.9); }
+.winder.w9 { left: calc(50% - 150px); top: 50%; }
+.winder.w3 { left: calc(50% + 150px); top: 50%; }
+.winder.w6 { left: 50%; top: calc(50% + 150px); }
+
 /* ===========================================================
    TRUNK / WAIST
    =========================================================== */
@@ -463,23 +497,34 @@ body[data-theme="auto"] #viewport { background: transparent; }
   pointer-events: none;
 }
 
-/* Weights */
+/* Weights. Each is positioned absolutely so it sits directly below its
+   winding arbor on the dial (left = strike, centre = time, right = chime),
+   at ±150px from centre to match the arbors' 9/6/3 positions. */
 .weights {
   position: absolute;
-  top: 0px; left: 0; right: 0;
-  display: flex;
-  justify-content: space-evenly;
+  top: 8px; left: 0; right: 0;
   z-index: 1;
 }
-.weight { display: flex; flex-direction: column; align-items: center; }
-/* Two lines descend the sides of the sheave, tangent to the bottom wrap. */
+.weight {
+  position: absolute;
+  top: 0; left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(-50%);
+}
+#wStrike { transform: translateX(calc(-50% - 150px)); }
+#wTime   { transform: translateX(-50%); }
+#wChime  { transform: translateX(calc(-50% + 150px)); }
+/* Two lines descend the sides of the sheave, tangent to the bottom wrap.
+   Their length (--cable) is set by JS to move the weight as it runs/winds. */
 .weight .cables {
   display: flex;
   justify-content: center;
   gap: 34px;            /* line spacing = wrap diameter (cables tangent at the sides) */
 }
 .weight .cable {
-  width: 3px; height: 97px;
+  width: 3px; height: var(--cable, 97px);
   background: linear-gradient(90deg, #6b6b6b, #cfcfcf, #6b6b6b);
 }
 /* Pulley sheave — a brass wheel with 4 spokes and an axle hub. The negative

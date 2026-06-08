@@ -173,7 +173,9 @@ const Clock = (() => {
     updateMoon(date);
     if (document.body.dataset.theme === 'auto') applyAutoTheme(date);
 
-    if (onTick) onTick(date, speed);
+    // Pass both simulated and real elapsed ms so consumers can advance
+    // time-based state (weights) and real-time animations (winding).
+    if (onTick) onTick(date, speed, dt * speed, dt);
     requestAnimationFrame(frame);
   }
 

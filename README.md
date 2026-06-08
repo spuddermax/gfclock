@@ -75,6 +75,21 @@ Settings persist via `localStorage`.
 > Browsers require a user gesture before audio can play. The first click anywhere in the
 > settings drawer (or the Test button) unlocks sound.
 
+### Weights & winding (8-day movement)
+
+Three weights hang on pulleys in the trunk, one per train:
+
+- **Centre = time** (going train) — descends continuously; a full wind lasts **8 days**.
+- **Left = strike** (hour gong) — descends each hour, proportional to the strike count.
+- **Right = chime** — descends each quarter, proportional to the chime length.
+
+The dial has three **winding arbors** at the 9, 6 and 3 o'clock positions, each
+directly above its weight (9 = strike, 6 = time, 3 = chime). **Click an arbor** to
+wind that weight back up to the top. To watch the weights run down quickly, bump the
+**Time speed** in settings — the strike/chime weights drop on each chime/strike even
+while fast-forwarding (and even when the sound is muted or night-silenced, since the
+mechanism still trips).
+
 ### Moon dial
 
 Like a real lunar dial, a moon transits the night-sky arch between **two earth globes**.

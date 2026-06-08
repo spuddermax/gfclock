@@ -53,6 +53,16 @@
                 <!-- Minute tick ring (filled by JS) -->
                 <div id="ticks" class="ticks"></div>
 
+                <!-- Winding arbors (8-day movement). Placed at the 9, 6 and 3
+                     clock positions, each directly above its weight:
+                     9 = strike (hour gong), 6 = time (centre), 3 = chime. -->
+                <button class="winder w9" id="windStrike" data-arbor="strike"
+                        title="Wind the strike (hour gong) weight" aria-label="Wind the strike weight"></button>
+                <button class="winder w6" id="windTime" data-arbor="time"
+                        title="Wind the time weight" aria-label="Wind the time weight"></button>
+                <button class="winder w3" id="windChime" data-arbor="chime"
+                        title="Wind the chime weight" aria-label="Wind the chime weight"></button>
+
                 <!-- Seconds subdial (upper, where the logo used to be) -->
                 <div id="subSeconds" class="sub-seconds">
                   <div id="subTicks" class="sub-ticks"></div>
@@ -91,7 +101,8 @@
                the way around a 4-spoke sheave, and the weight hangs from the
                pulley by a hook. -->
           <div class="weights">
-            <div class="weight">
+            <!-- Left: strike (hour gong) weight -->
+            <div class="weight" id="wStrike">
               <div class="cables"><span class="cable"></span><span class="cable"></span></div>
               <span class="pulley">
                 <span class="cable-wrap"></span>
@@ -101,7 +112,8 @@
               <span class="hook"></span>
               <span class="bob"></span>
             </div>
-            <div class="weight">
+            <!-- Centre: time (going train) weight -->
+            <div class="weight" id="wTime">
               <div class="cables"><span class="cable"></span><span class="cable"></span></div>
               <span class="pulley">
                 <span class="cable-wrap"></span>
@@ -111,7 +123,8 @@
               <span class="hook"></span>
               <span class="bob"></span>
             </div>
-            <div class="weight">
+            <!-- Right: chime weight -->
+            <div class="weight" id="wChime">
               <div class="cables"><span class="cable"></span><span class="cable"></span></div>
               <span class="pulley">
                 <span class="cable-wrap"></span>
