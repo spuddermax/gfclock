@@ -24,6 +24,8 @@ const Clock = (() => {
     el.second = document.getElementById('secondHand');
     el.numerals = document.getElementById('numerals');
     el.ticks = document.getElementById('ticks');
+    el.subSeconds = document.getElementById('subSeconds');
+    el.subTicks = document.getElementById('subTicks');
     el.dateText = document.getElementById('dateText');
     el.moonDisc = document.getElementById('moonDisc');
     el.sky = document.getElementById('sky');
@@ -50,6 +52,13 @@ const Clock = (() => {
       // place at top, rotate around center, push outward
       tick.style.transform = `rotate(${i * 6}deg) translateY(-236px)`;
       el.ticks.appendChild(tick);
+    }
+    // Seconds subdial: 12 marks (every 5 seconds), majors at the quarters.
+    for (let i = 0; i < 12; i++) {
+      const t = document.createElement('div');
+      t.className = 'sub-tick' + (i % 3 === 0 ? ' major' : '');
+      t.style.transform = `rotate(${i * 30}deg) translateY(-46px)`;
+      el.subTicks.appendChild(t);
     }
   }
 
@@ -183,7 +192,7 @@ const Clock = (() => {
   function getTime() { return simNow; }
   function setMoonPhase(p) { moonOverride = (p == null ? null : ((p % 1) + 1) % 1); }
   function setOnTick(fn) { onTick = fn; }
-  function showSeconds(show) { el.second.style.display = show ? '' : 'none'; }
+  function showSeconds(show) { el.subSeconds.style.display = show ? '' : 'none'; }
 
   return { init, setSpeed, getSpeed, setTime, getTime, setMoonPhase, setOnTick, showSeconds };
 })();

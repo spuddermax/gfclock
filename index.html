@@ -43,13 +43,22 @@
           <div class="dial-frame">
             <div class="dial">
               <div class="dial-face">
-                <div class="maker">Howard Miller</div>
-                <div class="maker-sub">Triple Chime &middot; 2004</div>
-
                 <!-- Roman numeral chapter ring (filled by JS) -->
                 <div id="numerals" class="numerals"></div>
                 <!-- Minute tick ring (filled by JS) -->
                 <div id="ticks" class="ticks"></div>
+
+                <!-- Seconds subdial (upper, where the logo used to be) -->
+                <div id="subSeconds" class="sub-seconds">
+                  <div id="subTicks" class="sub-ticks"></div>
+                  <div class="sub-label">60</div>
+                  <div id="secondHand" class="sub-hand"></div>
+                  <div class="sub-cap"></div>
+                </div>
+
+                <!-- Maker, now sitting just above the date window -->
+                <div class="maker">Howard Miller</div>
+                <div class="maker-sub">Triple Chime &middot; 2004</div>
 
                 <!-- Date window -->
                 <div id="dateWindow" class="date-window">
@@ -60,7 +69,6 @@
                 <div class="hands">
                   <div id="hourHand" class="hand hour-hand"></div>
                   <div id="minuteHand" class="hand minute-hand"></div>
-                  <div id="secondHand" class="hand second-hand"></div>
                   <div class="hand-cap"></div>
                 </div>
               </div>
