@@ -472,42 +472,101 @@ body[data-theme="auto"] #viewport { background: transparent; }
   z-index: 1;
 }
 .weight { display: flex; flex-direction: column; align-items: center; }
-/* Two lines descend, spaced to land on the rim of the pulley wheel. */
+/* Two lines descend, tangent to the cable-wrap around the pulley. */
 .weight .cables {
   display: flex;
   justify-content: center;
-  gap: 16px;            /* line spacing ≈ pulley diameter */
+  gap: 35px;            /* line spacing = cable-wrap diameter */
 }
 .weight .cable {
-  width: 3px; height: 116px;
+  width: 3px; height: 96px;
   background: linear-gradient(90deg, #6b6b6b, #cfcfcf, #6b6b6b);
 }
-/* Pulley wheel on top of the weight — the cable wraps over it. */
+/* Pulley sheave — a brass wheel with 4 spokes and an axle hub. The negative
+   top margin lifts the wrap up so the descending cables meet its rim. */
 .weight .pulley {
   position: relative;
-  width: 22px; height: 22px;
-  margin-top: -1px;     /* tuck under the cable ends so they meet the rim */
+  width: 34px; height: 34px;
+  margin-top: -8px;
   border-radius: 50%;
-  background: radial-gradient(circle at 38% 32%, var(--brass-lite), var(--brass) 52%, var(--brass-dark));
-  box-shadow: inset 0 0 4px rgba(0,0,0,0.55), 0 2px 4px rgba(0,0,0,0.45);
+  background: radial-gradient(circle at 38% 32%, var(--brass-lite), var(--brass) 55%, var(--brass-dark));
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.5), 0 2px 5px rgba(0,0,0,0.45);
 }
-/* axle hub */
-.weight .pulley::after {
-  content: "";
+/* The cable wrapped all the way around the sheave's groove. */
+.weight .cable-wrap {
   position: absolute;
   top: 50%; left: 50%;
-  width: 6px; height: 6px;
+  width: 38px; height: 38px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
+  border: 2.5px solid #9b9b9b;
+  background: transparent;
+  box-shadow: inset 0 0 2px rgba(0,0,0,0.5), 0 0 1px rgba(0,0,0,0.4);
+}
+/* 4 spokes = a horizontal bar + a vertical bar crossing the hub. */
+.weight .spokes {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 34px; height: 34px;
+  transform: translate(-50%, -50%);
+}
+.weight .spokes::before,
+.weight .spokes::after {
+  content: "";
+  position: absolute;
   background: var(--brass-dark);
+}
+.weight .spokes::before { top: 50%; left: 4px; right: 4px; height: 2px; transform: translateY(-50%); }
+.weight .spokes::after  { left: 50%; top: 4px; bottom: 4px; width: 2px; transform: translateX(-50%); }
+/* Axle hub at the centre. */
+.weight .hub {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 9px; height: 9px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, var(--brass-lite), var(--brass-dark));
   box-shadow: inset 0 0 2px rgba(0,0,0,0.7);
 }
+/* S-hook hanging the weight from the pulley: top loop grips the sheave's
+   axle, bottom loop holds the weight's eyelet. */
+.weight .hook {
+  position: relative;
+  width: 16px; height: 30px;
+  margin-top: -3px;
+  margin-bottom: -5px;  /* lower loop overlaps the weight's eyelet */
+  z-index: 1;
+}
+.weight .hook::before,
+.weight .hook::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px; height: 17px;
+  border: 3px solid var(--brass);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.45);
+}
+.weight .hook::before { top: 0;    border-bottom: none; border-radius: 50% 50% 0 0; } /* opens up to grip the sheave */
+.weight .hook::after  { bottom: 0; border-top: none;    border-radius: 0 0 50% 50%; } /* opens down to the weight */
 .weight .bob {
+  position: relative;
   width: 56px; height: 230px;
   border-radius: 12px / 8px;
   background: linear-gradient(90deg, var(--brass-dark), var(--brass-lite) 45%, var(--brass) 55%, var(--brass-dark));
   box-shadow: inset 0 0 12px rgba(0,0,0,0.4), 0 6px 12px rgba(0,0,0,0.5);
   border-radius: 10px;
+}
+/* Eyelet on top of the weight that the hook's lower loop passes through. */
+.weight .bob::before {
+  content: "";
+  position: absolute;
+  top: -7px; left: 50%;
+  width: 10px; height: 10px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  border: 2.5px solid var(--brass-dark);
+  background: transparent;
 }
 
 /* Pendulum — suspended from the centre of the dial (above the trunk window).
