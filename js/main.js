@@ -91,8 +91,8 @@
     if (w) w.drop = Math.min(1, w.drop + amount);
   }
 
-  function windWeight(which) {
-    if (weight[which]) weight[which].winding = true;
+  function setWinding(which, on) {
+    if (weight[which]) weight[which].winding = on;
   }
 
   function updateWeights(dtSim, dtReal) {
@@ -365,9 +365,23 @@
       lastQuarterKey = null;
     });
 
-    // Winding arbors on the dial — click to wind the matching weight up.
+    // Winding arbors on the dial — wind the matching weight up only while the
+    // key is held down; releasing (or leaving) stops the winding.
     document.querySelectorAll('.winder').forEach((btn) => {
-      btn.addEventListener('click', () => windWeight(btn.dataset.arbor));
+      const which = btn.dataset.arbor;
+      const start = (e) => {
+        e.preventDefault();
+        // Capture the pointer so a release anywhere still stops winding.
+        if (btn.setPointerCapture && e.pointerId != null) {
+          try { btn.setPointerCapture(e.pointerId); } catch (_) {}
+        }
+        setWinding(which, true);
+      };
+      const stop = () => setWinding(which, false);
+      btn.addEventListener('pointerdown', start);
+      btn.addEventListener('pointerup', stop);
+      btn.addEventListener('pointercancel', stop);
+      btn.addEventListener('pointerleave', stop); // fallback if no pointer capture
     });
   }
 
