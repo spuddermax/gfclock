@@ -484,33 +484,38 @@ body[data-theme="auto"] #viewport { background: transparent; }
   border-radius: 10px;
 }
 
-/* Pendulum (anchored at top center, swings) */
+/* Pendulum — suspended from the centre of the dial (above the trunk window).
+   The pivot sits 326px above the glass-door's top edge, so the upper rod is
+   hidden behind the dial (clipped by the door's overflow) just like a real
+   clock; only the lower rod and bob swing in view. */
 .pendulum {
   position: absolute;
-  top: 18px;
+  top: -326px;          /* element top = dial centre (clipped above the window) */
   left: 50%;
+  margin-left: -78px;   /* half the bob width, to centre the pendulum */
+  width: 156px;
   transform-origin: top center;
   z-index: 2;
   animation: swing 2s ease-in-out infinite;
 }
 .pendulum-rod {
-  width: 6px;
-  height: 470px;
+  width: 7px;
+  height: 626px;        /* from the dial centre down into the trunk */
   margin: 0 auto;
   background: linear-gradient(90deg, #7c7c7c, #e6e6e6, #7c7c7c);
 }
 .pendulum-bob {
-  width: 130px; height: 130px;
-  margin: -14px auto 0;
+  width: 156px; height: 156px;
+  margin: -16px auto 0;
   border-radius: 50%;
   background: radial-gradient(circle at 38% 35%, var(--brass-lite), var(--brass) 45%, var(--brass-dark));
-  box-shadow: inset -10px -10px 22px rgba(0,0,0,0.45), 0 8px 16px rgba(0,0,0,0.5);
+  box-shadow: inset -12px -12px 26px rgba(0,0,0,0.45), 0 8px 16px rgba(0,0,0,0.5);
   border: 4px solid var(--brass-dark);
 }
 @keyframes swing {
-  0%   { transform: translateX(-50%) rotate(9deg); }
-  50%  { transform: translateX(-50%) rotate(-9deg); }
-  100% { transform: translateX(-50%) rotate(9deg); }
+  0%   { transform: rotate(7deg); }
+  50%  { transform: rotate(-7deg); }
+  100% { transform: rotate(7deg); }
 }
 
 /* ===========================================================
