@@ -80,14 +80,31 @@
     const baseFixed = weight.time.el.offsetHeight - CABLE_MIN;
     const avail = door.clientHeight - 16; // 8px headroom top + bottom
     weightTravel = Math.max(120, avail - baseFixed - CABLE_MIN);
+    // Cache the rotating sheave (spokes) and each pulley's diameter so the
+    // sheave can roll on the cable: one circumference per π·d of travel.
+    for (const k in weight) {
+      const w = weight[k];
+      w.spokes = w.el.querySelector('.spokes');
+      const pulley = w.el.querySelector('.pulley');
+      w.pulleyDiam = pulley ? pulley.offsetWidth : 34; // px
+    }
     applyWeights();
   }
 
   function applyWeights() {
     for (const k in weight) {
-      const drop = Math.max(0, Math.min(1, weight[k].drop));
-      const cable = CABLE_MIN + drop * weightTravel;
-      weight[k].el.style.setProperty('--cable', cable.toFixed(1) + 'px');
+      const w = weight[k];
+      const drop = Math.max(0, Math.min(1, w.drop));
+      const descent = drop * weightTravel;           // px the sheave has dropped
+      const cable = CABLE_MIN + descent;
+      w.el.style.setProperty('--cable', cable.toFixed(1) + 'px');
+      // Roll without slipping on the cable: a full turn per circumference of
+      // travel. Positive (clockwise) as it runs down; so winding up turns it
+      // counter-clockwise.
+      if (w.spokes) {
+        const deg = (descent / (Math.PI * w.pulleyDiam)) * 360;
+        w.spokes.style.transform = `translate(-50%, -50%) rotate(${deg.toFixed(2)}deg)`;
+      }
     }
   }
 
