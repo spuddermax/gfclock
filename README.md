@@ -87,6 +87,10 @@ Three weights hang on pulleys in the trunk, one per train:
 - **Left = strike** (hour gong) — descends each hour, proportional to the strike count.
 - **Right = chime** — descends each quarter, proportional to the chime length.
 
+As a weight rises or falls, its **pulley sheave rolls on the cable** — one full turn per
+circumference of travel (exact for the sheave's diameter), turning counter-clockwise as you
+wind it up.
+
 The dial has three **winding arbors** at the 9, 6 and 3 o'clock positions, each
 directly above its weight (9 = strike, 6 = time, 3 = chime). **Press and hold an
 arbor** to wind that weight up — it rises while held and stops the moment you let go
