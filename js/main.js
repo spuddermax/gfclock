@@ -62,8 +62,8 @@
   let weightTravel = 600;            // px of travel, measured at init
   const weight = {
     time:   { el: null, drop: 0.50, winding: false },
-    strike: { el: null, drop: 0.40, winding: false },
-    chime:  { el: null, drop: 0.60, winding: false },
+    strike: { el: null, drop: 0.40, winding: false, descendLeft: 0, descendRate: 0 },
+    chime:  { el: null, drop: 0.60, winding: false, descendLeft: 0, descendRate: 0 },
   };
   // While winding, play the tick (ratchet) sound 4×/second.
   const WIND_TICK_MS = 250;
@@ -108,9 +108,14 @@
     }
   }
 
-  function depleteWeight(which, amount) {
+  /* Make a weight descend by `amount` (drop units) spread over `durationSec`
+     of real time — i.e. only while its train is actually running (chiming or
+     striking). Overlapping calls accumulate. */
+  function scheduleDescent(which, amount, durationSec) {
     const w = weight[which];
-    if (w) w.drop = Math.min(1, w.drop + amount);
+    if (!w || amount <= 0) return;
+    w.descendLeft += amount;
+    w.descendRate = durationSec > 0 ? w.descendLeft / durationSec : w.descendLeft; // units/sec
   }
 
   function setWinding(which, on) {
@@ -118,9 +123,18 @@
   }
 
   function updateWeights(dtSim, dtReal) {
-    // The going train always runs (unless we're actively winding it).
+    // The going (time) train always runs (unless we're actively winding it).
     if (!weight.time.winding) {
       weight.time.drop = Math.min(1, weight.time.drop + dtSim / FULL_WIND_MS);
+    }
+    // The strike/chime weights descend ONLY while their train is running — i.e.
+    // while there's scheduled descent left from an active chime/strike.
+    for (const k of ['strike', 'chime']) {
+      const w = weight[k];
+      if (w.winding || w.descendLeft <= 0) continue;
+      const step = Math.min(w.descendLeft, w.descendRate * (dtReal / 1000));
+      w.drop = Math.min(1, w.drop + step);
+      w.descendLeft -= step;
     }
     // Winding pulls a weight back up to the top at a steady real-time rate.
     let anyWinding = false;
@@ -130,6 +144,7 @@
         anyWinding = true;
         w.drop -= dtReal / WIND_FULL_MS;
         if (w.drop <= 0) { w.drop = 0; w.winding = false; }
+        if (w.descendLeft) w.descendLeft = 0; // winding cancels any pending descent
       }
     }
     applyWeights();
@@ -203,14 +218,20 @@
   function fireChime(date, quarter, speed) {
     if (settings.chime === 'silent') return;
 
-    // The chime/strike train trips every quarter/hour and its weight descends,
-    // whether or not the sound is audible (muted / night / fast-forward). The
-    // amount is proportional to the work: chime phrases now, gong count at :00.
+    // The chime/strike train trips every quarter/hour and its weight descends
+    // *while that train runs* (whether or not the sound is audible). The amount
+    // is proportional to the work: chime phrases, then the gong count at :00.
     const phrases = quarter === 0 ? 4 : quarter; // 1,2,3,4 phrases
-    depleteWeight('chime', phrases * UNIT_CHIME);
+    const chimeDur = ChimeAudio.chimeDuration(settings.chime, quarter);
+    scheduleDescent('chime', phrases * UNIT_CHIME, chimeDur);
+
+    let strikeCount = 0;
     if (quarter === 0) {
-      const count = (date.getHours() % 12) || 12;
-      depleteWeight('strike', count * UNIT_STRIKE);
+      strikeCount = (date.getHours() % 12) || 12;
+      const strikeDur = strikeCount * settings.strikeGap; // gong spacing (s)
+      // The strike train runs after the chime finishes, so its weight descends then.
+      setTimeout(() => scheduleDescent('strike', strikeCount * UNIT_STRIKE, strikeDur),
+        chimeDur * 1000);
     }
 
     const silenced = isNightSilenced(date);
@@ -221,17 +242,13 @@
 
     if (!audible) return;
 
-    // quarter index used by the audio tables: 1=:15, 2=:30, 3=:45, 0=:00
-    const qKey = quarter; // 0 at top of hour
-    ChimeAudio.playChime(settings.chime, qKey);
+    ChimeAudio.playChime(settings.chime, quarter);
 
     if (quarter === 0) {
-      // Top of hour: play the 4 phrases, then strike the hour after they finish.
-      const dur = ChimeAudio.chimeDuration(settings.chime, 0);
-      const count = ((date.getHours() % 12) || 12);
+      // Top of hour: play the phrases, then strike the hour after they finish.
       setTimeout(() => {
-        if (!settings.muted) ChimeAudio.playStrike(count, settings.chime);
-      }, dur * 1000);
+        if (!settings.muted) ChimeAudio.playStrike(strikeCount, settings.chime);
+      }, chimeDur * 1000);
     }
   }
 
