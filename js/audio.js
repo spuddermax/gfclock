@@ -76,12 +76,13 @@ const ChimeAudio = (() => {
     p4: ['Gs4', 'E4', 'Fs4', 'B3'],
     p5: ['B3', 'Fs4', 'Gs4', 'E4'],
   };
-  // Which phrases play at each quarter (0=:00, 1=:15, 2=:30, 3=:45)
+  // Which phrases play at each quarter (0=:00, 1=:15, 2=:30, 3=:45). Cumulative:
+  // every chime opens with the 15-minute phrase and adds the next one(s).
   const WESTMINSTER = {
     1: [WEST.p1],
-    2: [WEST.p2, WEST.p3],
-    3: [WEST.p4, WEST.p5, WEST.p1],
-    0: [WEST.p2, WEST.p3, WEST.p4, WEST.p5], // top of hour (before the strike)
+    2: [WEST.p1, WEST.p2],
+    3: [WEST.p1, WEST.p2, WEST.p3],
+    0: [WEST.p1, WEST.p2, WEST.p3, WEST.p4], // top of hour (before the strike)
   };
 
   /* ---- Whittington (approximation of the longer melody) ---- */
@@ -96,8 +97,8 @@ const ChimeAudio = (() => {
   const WHITTINGTON = {
     1: [WHIT.a],
     2: [WHIT.a, WHIT.b],
-    3: [WHIT.c, WHIT.d, WHIT.e],
-    0: [WHIT.a, WHIT.b, WHIT.c, WHIT.d, WHIT.e, WHIT.f],
+    3: [WHIT.a, WHIT.b, WHIT.c],
+    0: [WHIT.a, WHIT.b, WHIT.c, WHIT.d],
   };
 
   /* ---- St. Michael (approximation) ---- */
@@ -110,7 +111,7 @@ const ChimeAudio = (() => {
   const STMICHAEL = {
     1: [STM.a],
     2: [STM.a, STM.b],
-    3: [STM.c, STM.d, STM.a],
+    3: [STM.a, STM.b, STM.c],
     0: [STM.a, STM.b, STM.c, STM.d],
   };
 
