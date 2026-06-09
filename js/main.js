@@ -48,15 +48,18 @@
   let lastTickSec = null; // absolute floored second, for the per-second tick sound
   const AUDIO_SPEED_LIMIT = 4; // above this, suppress audio (visual flash only)
 
-  // ---- Weights (8-day movement) ----
+  // ---- Weights ----
   // Each weight's `drop` runs 0 (fully wound, at the top) -> 1 (fully run down).
-  // The TIME weight descends continuously (full travel = 8 days). The STRIKE
-  // and CHIME weights descend per event, proportional to the work done, scaled
-  // so a normal week also runs them down in ~8 days.
+  // The TIME (going) weight descends slowly and continuously — a full drop takes
+  // 8 days. The STRIKE and CHIME trains do far more work, in short bursts, so
+  // their weights descend visibly during each strike/chime and run down much
+  // faster: a full drop in roughly ONE day of normal operation (~8x the time
+  // weight's rate). The per-event amount stays proportional to the work (gong
+  // count / chime phrases).
   const DAY_MS = 86400000;
   const FULL_WIND_MS = 8 * DAY_MS;   // time weight: top -> bottom in 8 days
-  const UNIT_STRIKE = 1 / 1248;      // per gong  (156 gongs/day * 8 days)
-  const UNIT_CHIME  = 1 / 1920;      // per chime phrase (10 phrases/hr * 24 * 8)
+  const UNIT_STRIKE = 1 / 156;       // per gong   (~156 gongs/day -> full drop in a day)
+  const UNIT_CHIME  = 1 / 240;       // per phrase (10 phrases/hr * 24 -> full drop in a day)
   const WIND_FULL_MS = 6000;         // real ms to wind a full run-down up to the top
   const CABLE_MIN = 16;              // cable length (px) when fully wound
   let weightTravel = 600;            // px of travel, measured at init

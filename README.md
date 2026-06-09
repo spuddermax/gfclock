@@ -83,9 +83,15 @@ Settings persist via `localStorage`.
 
 Three weights hang on pulleys in the trunk, one per train:
 
-- **Centre = time** (going train) — descends continuously; a full wind lasts **8 days**.
-- **Left = strike** (hour gong) — descends each hour, proportional to the strike count.
-- **Right = chime** — descends each quarter, proportional to the chime length.
+- **Centre = time** (going train) — descends slowly and continuously; a full wind lasts **8 days**.
+- **Left = strike** (hour gong) — descends in a quick burst *while it strikes* each hour,
+  proportional to the gong count (a 12-gong noon strike drops it noticeably).
+- **Right = chime** — descends in a quick burst *while it chimes* each quarter, proportional
+  to the chime length.
+
+The strike and chime trains do far more work than the going train, in short bursts, so their
+weights move **visibly faster** during each strike/chime and run all the way down much sooner
+(a full drop in roughly a day, vs 8 days for the time weight). Between bursts they sit still.
 
 As a weight rises or falls, its **pulley sheave rolls on the cable** — one full turn per
 circumference of travel (exact for the sheave's diameter), turning counter-clockwise as you
