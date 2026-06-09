@@ -305,28 +305,28 @@ body[data-theme="auto"] #viewport { background: transparent; }
   filter: blur(1.6px);
   background:
     /* desert patch */
-    radial-gradient(10px 8px at 60% 33%, rgba(201,170,99,0.75) 0 52%, transparent 80%),
+    radial-gradient(20px 16px at 60% 33%, rgba(201,170,99,0.75) 0 52%, transparent 80%),
     /* continent A (overlapping lobes -> one irregular mass) */
-    radial-gradient(20px 16px at 58% 34%, #4f9a44 0 64%, transparent 84%),
-    radial-gradient(15px 18px at 67% 45%, #4f9a44 0 64%, transparent 84%),
-    radial-gradient(14px 13px at 49% 43%, #4f9a44 0 64%, transparent 84%),
+    radial-gradient(40px 32px at 58% 34%, #4f9a44 0 64%, transparent 84%),
+    radial-gradient(30px 36px at 67% 45%, #4f9a44 0 64%, transparent 84%),
+    radial-gradient(28px 26px at 49% 43%, #4f9a44 0 64%, transparent 84%),
     /* continent B (lower-left) */
-    radial-gradient(16px 14px at 33% 62%, #4f9a44 0 64%, transparent 84%),
-    radial-gradient(12px 17px at 39% 73%, #4f9a44 0 64%, transparent 84%),
-    radial-gradient(11px 10px at 27% 55%, #4f9a44 0 64%, transparent 84%),
+    radial-gradient(32px 28px at 33% 62%, #4f9a44 0 64%, transparent 84%),
+    radial-gradient(24px 34px at 39% 73%, #4f9a44 0 64%, transparent 84%),
+    radial-gradient(22px 20px at 27% 55%, #4f9a44 0 64%, transparent 84%),
     /* island */
-    radial-gradient(8px 7px at 77% 65%, #4f9a44 0 60%, transparent 84%);
+    radial-gradient(16px 14px at 77% 65%, #4f9a44 0 60%, transparent 84%);
 }
 /* A different hemisphere on the opposite globe so the two aren't identical. */
 .globe-right::before {
   background:
-    radial-gradient(9px 7px at 42% 44%, rgba(201,170,99,0.7) 0 52%, transparent 80%),
-    radial-gradient(18px 15px at 40% 44%, #4f9a44 0 64%, transparent 84%),
-    radial-gradient(14px 18px at 48% 55%, #4f9a44 0 64%, transparent 84%),
-    radial-gradient(12px 11px at 32% 36%, #4f9a44 0 64%, transparent 84%),
-    radial-gradient(15px 20px at 67% 58%, #4f9a44 0 64%, transparent 84%),
-    radial-gradient(11px 12px at 72% 44%, #4f9a44 0 64%, transparent 84%),
-    radial-gradient(8px 7px at 28% 66%, #4f9a44 0 60%, transparent 84%);
+    radial-gradient(18px 14px at 42% 44%, rgba(201,170,99,0.7) 0 52%, transparent 80%),
+    radial-gradient(36px 30px at 40% 44%, #4f9a44 0 64%, transparent 84%),
+    radial-gradient(28px 36px at 48% 55%, #4f9a44 0 64%, transparent 84%),
+    radial-gradient(24px 22px at 32% 36%, #4f9a44 0 64%, transparent 84%),
+    radial-gradient(30px 40px at 67% 58%, #4f9a44 0 64%, transparent 84%),
+    radial-gradient(22px 24px at 72% 44%, #4f9a44 0 64%, transparent 84%),
+    radial-gradient(16px 14px at 28% 66%, #4f9a44 0 60%, transparent 84%);
 }
 /* Clouds + polar ice cap + sphere shading + atmosphere rim — above the land. */
 .globe::after {
