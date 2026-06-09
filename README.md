@@ -125,5 +125,6 @@ js/clock.js     dial build, render loop, hands, moon phase, auto day/night sky, 
 js/audio.js     sample-based bell chimes + recorded strike + synth tick (Web Audio)
 js/main.js      settings, chime scheduling, night silence, persistence, UI wiring
 assets/audio/   bells/*.mp3 (CC0 tubular bells) + westminster.mp3 (strike) + CREDITS
+assets/mountains.svg   snow-capped mountain range for the Auto sky
 start.sh        Python static server on port 8473
 ```
