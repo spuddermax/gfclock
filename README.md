@@ -1,9 +1,11 @@
 # Grandfather Clock
 
 A self-contained, vanilla HTML/CSS/JS recreation of a Howard Miller triple-chime
-grandfather clock (circa 2004). The whole clock — case, dial, moon-phase arch,
-swinging pendulum, and hanging weights — is drawn in CSS; chimes are synthesized
-live with the Web Audio API. No frameworks, no build step, no image or audio files.
+grandfather clock (circa 2004). The case, dial, moon-phase arch, swinging pendulum,
+and hanging weights (on pulleys) are all drawn in CSS. Chimes play note-by-note from
+real public-domain bell samples through the Web Audio API; the escapement tick is
+synthesized. No frameworks and no build step — just a static page plus a handful of
+small audio files and an SVG.
 
 Designed for a **portrait 1080 × 1920** monitor, but it scales to fit any window.
 
@@ -51,6 +53,7 @@ Click the **⚙ gear** (top-right) to open the settings drawer:
 | **Mute / Volume** | Master sound controls. |
 | **Auto night silence** | Suppresses chimes 10:15 PM – 7:15 AM, like the real movement. |
 | **Ticking sound** | Per-second escapement tick/tock (ticks 24/7; night silence only affects chimes). |
+| **Tick volume** | Independent level for the escapement tick (also used as the winding ratchet). |
 | **Show seconds hand** | Toggle the seconds hand. |
 | **Time speed** | `1× / 60× / 300× / 3600×` for testing, plus "jump to time" and "reset to now". |
 | **Test chime & strike** | Plays the current melody followed by a 3-count strike. |
@@ -126,5 +129,11 @@ js/audio.js     sample-based bell chimes + recorded strike + synth tick (Web Aud
 js/main.js      settings, chime scheduling, night silence, persistence, UI wiring
 assets/audio/   bells/*.mp3 (CC0 tubular bells) + westminster.mp3 (strike) + CREDITS
 assets/mountains.svg   snow-capped mountain range for the Auto sky
-start.sh        Python static server on port 8473
+start.sh        Python static (no-cache) server on port 8473, prints the LAN URL
+LICENSE         MIT
 ```
+
+## License
+
+MIT — see [`LICENSE`](LICENSE). Bundled audio is public domain / CC0; see the
+`CREDITS.md` files under `assets/audio/`.
