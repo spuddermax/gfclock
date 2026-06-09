@@ -560,7 +560,7 @@ body[data-theme="auto"] #viewport { background: transparent; }
    at ±150px from centre to match the arbors' 9/6/3 positions. */
 .weights {
   position: absolute;
-  top: 8px; left: 0; right: 0;
+  left: 0; right: 0;
   z-index: 1;
 }
 .weight {
