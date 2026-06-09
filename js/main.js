@@ -410,9 +410,15 @@
       ChimeAudio.unlock();
       flashDial();
       const testTune = settings.chime === 'silent' ? 'westminster' : settings.chime;
-      ChimeAudio.playChime(testTune, 0);
       const dur = ChimeAudio.chimeDuration(testTune, 0);
-      setTimeout(() => ChimeAudio.playStrike(3, testTune), dur * 1000);
+      const testStrike = 3;
+      ChimeAudio.playChime(testTune, 0);
+      setTimeout(() => ChimeAudio.playStrike(testStrike, testTune), dur * 1000);
+      // Drive the weights just like a real hour chime + strike: the chime
+      // weight descends over the chime, then the strike weight over the strike.
+      scheduleDescent('chime', 4 * UNIT_CHIME, dur);
+      setTimeout(() => scheduleDescent('strike', testStrike * UNIT_STRIKE, testStrike * settings.strikeGap),
+        dur * 1000);
     });
 
     el.applyTime.addEventListener('click', () => {
