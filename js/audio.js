@@ -76,13 +76,16 @@ const ChimeAudio = (() => {
     p4: ['Gs4', 'E4', 'Fs4', 'B3'],
     p5: ['B3', 'Fs4', 'Gs4', 'E4'],
   };
-  // Which phrases play at each quarter (0=:00, 1=:15, 2=:30, 3=:45). Cumulative:
-  // every chime opens with the 15-minute phrase and adds the next one(s).
+  // Canonical Westminster Quarters (0=:00, 1=:15, 2=:30, 3=:45):
+  //   :15 -> change 1
+  //   :30 -> changes 2, 3
+  //   :45 -> changes 4, 5, 1   (the 15-min phrase recurs at the end)
+  //   :00 -> changes 2, 3, 4, 5  (then the hour strike)
   const WESTMINSTER = {
     1: [WEST.p1],
-    2: [WEST.p1, WEST.p2],
-    3: [WEST.p1, WEST.p2, WEST.p3],
-    0: [WEST.p1, WEST.p2, WEST.p3, WEST.p4], // top of hour (before the strike)
+    2: [WEST.p2, WEST.p3],
+    3: [WEST.p4, WEST.p5, WEST.p1],
+    0: [WEST.p2, WEST.p3, WEST.p4, WEST.p5],
   };
 
   /* ---- Whittington (approximation of the longer melody) ---- */
