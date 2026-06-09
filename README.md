@@ -111,7 +111,9 @@ mechanism still trips).
 Like a real lunar dial, a moon transits the night-sky arch between **two earth globes**.
 Position alone encodes the phase: the moon rises behind the right globe (waxing crescent),
 is fully clear at the top of the arch (full moon), then sets behind the left globe (waning
-crescent). The phase tracks the real synodic month for the simulated date.
+crescent). The phase tracks the real synodic month for the simulated date. The moon is
+painted with maria and rimmed craters, and the two globes show cloud-wisped continents
+and polar ice caps (each a different hemisphere) — all in CSS.
 
 ### Deep-link / testing URL params
 

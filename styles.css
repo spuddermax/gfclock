@@ -261,11 +261,22 @@ body[data-theme="auto"] #viewport { background: transparent; }
   border-radius: 50%;
   z-index: 1;
   background:
-    radial-gradient(8px 8px at 60% 42%, rgba(150,140,105,0.5), transparent 70%),
-    radial-gradient(6px 6px at 40% 62%, rgba(150,140,105,0.45), transparent 70%),
-    radial-gradient(5px 5px at 64% 68%, rgba(150,140,105,0.4), transparent 70%),
+    /* craters: dark floor + a bright catching-the-light rim */
+    radial-gradient(7px 7px at 64% 30%, rgba(120,108,84,0.60) 0 3px, rgba(255,250,232,0.55) 4px 5.2px, transparent 7px),
+    radial-gradient(5px 5px at 43% 71%, rgba(120,108,84,0.60) 0 2px, rgba(255,250,232,0.5) 2.8px 3.8px, transparent 5px),
+    radial-gradient(6px 6px at 73% 61%, rgba(120,108,84,0.55) 0 2.5px, rgba(255,250,232,0.5) 3.3px 4.5px, transparent 6px),
+    radial-gradient(4px 4px at 31% 44%, rgba(120,108,84,0.55) 0 1.6px, rgba(255,250,232,0.5) 2.2px 3px, transparent 4px),
+    radial-gradient(4.5px 4.5px at 55% 20%, rgba(120,108,84,0.5) 0 1.8px, rgba(255,250,232,0.45) 2.5px 3.4px, transparent 4.5px),
+    radial-gradient(3.5px 3.5px at 24% 64%, rgba(120,108,84,0.5) 0 1.4px, rgba(255,250,232,0.45) 2px 2.7px, transparent 3.5px),
+    radial-gradient(2.6px 2.6px at 48% 50%, rgba(120,108,84,0.5) 0 1px, rgba(255,250,232,0.4) 1.5px 2px, transparent 2.6px),
+    radial-gradient(2.4px 2.4px at 38% 28%, rgba(120,108,84,0.45) 0 0.9px, transparent 2.4px),
+    /* maria — the darker grey "seas" */
+    radial-gradient(20px 17px at 42% 36%, rgba(96,92,82,0.40), transparent 74%),
+    radial-gradient(15px 13px at 60% 50%, rgba(96,92,82,0.36), transparent 74%),
+    radial-gradient(11px 12px at 51% 65%, rgba(96,92,82,0.32), transparent 74%),
+    /* sunlit body */
     radial-gradient(circle at 38% 38%, #fffef0 0%, #f3edce 55%, #cfc69a 100%);
-  box-shadow: 0 0 22px 5px rgba(255,250,210,0.55), inset -7px -6px 12px rgba(120,110,70,0.4);
+  box-shadow: 0 0 22px 5px rgba(255,250,210,0.55), inset -7px -6px 12px rgba(120,110,70,0.45);
 }
 
 /* Two opposite earth globes flank the arch (the "lunar humps"). They sit
@@ -279,19 +290,49 @@ body[data-theme="auto"] #viewport { background: transparent; }
   z-index: 2;
   overflow: hidden;
   background:
-    /* green continents over blue ocean */
-    radial-gradient(22px 28px at 58% 38%, #4f9446 0%, #3c7338 62%, transparent 66%),
-    radial-gradient(28px 20px at 33% 62%, #4f9446 0%, #3c7338 62%, transparent 66%),
-    radial-gradient(18px 16px at 74% 68%, #4f9446 0%, #3c7338 60%, transparent 64%),
-    radial-gradient(14px 20px at 50% 80%, #4f9446 0%, transparent 64%),
-    /* ocean sphere with light from upper-left */
-    radial-gradient(circle at 34% 30%, #7cc0ee 0%, #2e74b5 45%, #1a4d80 78%, #0c2c4e 100%);
+    /* wispy clouds */
+    radial-gradient(22px 9px at 40% 24%, rgba(255,255,255,0.38), transparent 72%),
+    radial-gradient(16px 7px at 64% 72%, rgba(255,255,255,0.30), transparent 72%),
+    /* desert / arid patch on a continent */
+    radial-gradient(9px 7px at 60% 33%, rgba(200,170,100,0.6), transparent 72%),
+    /* continent A — overlapping lobes form one irregular landmass */
+    radial-gradient(20px 16px at 58% 34%, #4f9a44 0 60%, #34702f 74%, transparent 80%),
+    radial-gradient(15px 18px at 67% 45%, #4f9a44 0 60%, #34702f 74%, transparent 80%),
+    radial-gradient(14px 13px at 49% 43%, #56a449 0 60%, #34702f 74%, transparent 80%),
+    /* continent B (lower-left) */
+    radial-gradient(16px 14px at 33% 62%, #56a449 0 60%, #34702f 74%, transparent 80%),
+    radial-gradient(12px 17px at 39% 73%, #56a449 0 60%, #34702f 74%, transparent 80%),
+    radial-gradient(11px 10px at 27% 55%, #4f9a44 0 60%, #34702f 74%, transparent 80%),
+    /* small island */
+    radial-gradient(8px 7px at 77% 65%, #4f9a44 0 58%, #34702f 74%, transparent 80%),
+    /* polar ice cap */
+    radial-gradient(46px 16px at 50% 4%, rgba(247,251,255,0.92) 0%, rgba(214,232,245,0.5) 55%, transparent 80%),
+    /* ocean sphere, lit from the upper-left */
+    radial-gradient(circle at 34% 30%, #8fcdf2 0%, #2e74b5 44%, #17507f 78%, #0a2942 100%);
   box-shadow: inset -16px -14px 34px rgba(0,0,0,0.6),
               inset 8px 8px 18px rgba(255,255,255,0.18),
               0 0 16px rgba(70,140,210,0.28);
 }
 .globe-left  { left: -50px; }
 .globe-right { right: -50px; }
+/* A different hemisphere on the opposite globe so the two aren't identical. */
+.globe-right {
+  background:
+    radial-gradient(20px 8px at 60% 22%, rgba(255,255,255,0.36), transparent 72%),
+    radial-gradient(16px 7px at 34% 72%, rgba(255,255,255,0.30), transparent 72%),
+    radial-gradient(8px 7px at 42% 44%, rgba(200,170,100,0.55), transparent 72%),
+    /* centre-left continent */
+    radial-gradient(18px 15px at 40% 44%, #56a449 0 60%, #34702f 74%, transparent 80%),
+    radial-gradient(14px 18px at 48% 55%, #56a449 0 60%, #34702f 74%, transparent 80%),
+    radial-gradient(12px 11px at 32% 36%, #4f9a44 0 60%, #34702f 74%, transparent 80%),
+    /* right-hand continent */
+    radial-gradient(15px 20px at 67% 58%, #4f9a44 0 60%, #34702f 74%, transparent 80%),
+    radial-gradient(11px 12px at 72% 44%, #56a449 0 60%, #34702f 74%, transparent 80%),
+    /* island */
+    radial-gradient(8px 7px at 28% 66%, #4f9a44 0 58%, #34702f 74%, transparent 80%),
+    radial-gradient(46px 16px at 50% 4%, rgba(247,251,255,0.92) 0%, rgba(214,232,245,0.5) 55%, transparent 80%),
+    radial-gradient(circle at 34% 30%, #8fcdf2 0%, #2e74b5 44%, #17507f 78%, #0a2942 100%);
+}
 /* faint atmosphere rim */
 .globe::after {
   content: "";
