@@ -146,30 +146,59 @@ const Clock = (() => {
   }
   function moveClouds(dtMs) { driftCloudArray(cloudObjs, dtMs); }
 
-  /* ---------- Screensaver clouds (over everything, all levels) ---------- */
-  let ssCloudObjs = [];
+  /* ---------- Screensaver clouds ----------
+     Clouds spawn one at a time from the left at random heights / sizes / speeds
+     and drift across over everything, so they stream in naturally and build up
+     to full-screen coverage. No backdrop — just more clouds on top. */
+  let ssClouds = [];          // { el, x, speed }
   let screensaverOn = false;
-  const SS_COUNT = 30; // generous cover across the full viewport
+  let ssSpawnAccum = 0;       // ms since the last spawn
+  let ssNextSpawn = 0;        // ms until the next spawn
+  const SS_MAX = 48;          // cap on simultaneous clouds
+  const ssRand = (a, b) => a + Math.random() * (b - a);
 
-  function buildScreensaverClouds() {
-    if (!el.screensaver) return;
+  function spawnScreensaverCloud() {
+    if (!el.screensaver || ssClouds.length >= SS_MAX) return;
     const vw = window.innerWidth || 1080;
-    const span = vw + CLOUD_MARGIN;
-    el.screensaver.innerHTML = '';
-    ssCloudObjs = [];
-    for (let i = 0; i < SS_COUNT; i++) {
-      const w = 220 + (i * 53) % 260;          // 220..479
-      const c = document.createElement('div');
-      c.className = 'cloud';
-      c.style.top = ((i * 37) % 92) + '%';     // spawn at ALL levels of the viewport
-      c.style.width = w + 'px';
-      c.style.height = Math.round(w * 0.36) + 'px';
-      c.style.opacity = (0.82 + ((i * 13) % 18) / 100).toFixed(2);
-      const x = (i / SS_COUNT) * span - CLOUD_MARGIN;  // evenly phased for steady cover
-      c.style.transform = `translateX(${x}px)`;
-      el.screensaver.appendChild(c);
-      ssCloudObjs.push({ el: c, x });
+    const vh = window.innerHeight || 1920;
+    const w = ssRand(170, 460);
+    const h = Math.round(w * 0.36);
+    const c = document.createElement('div');
+    c.className = 'cloud';
+    c.style.width = w + 'px';
+    c.style.height = h + 'px';
+    // Random height — allowed to straddle the top/bottom edges so coverage runs
+    // right to the edges (and never looks like neat rows).
+    c.style.top = Math.round(ssRand(-h * 0.5, vh - h * 0.5)) + 'px';
+    c.style.opacity = ssRand(0.82, 1).toFixed(2);
+    const x = -(w + 60);                                 // start just off the left
+    c.style.transform = `translateX(${x}px)`;
+    el.screensaver.appendChild(c);
+    const speed = (vw + w + 140) / ssRand(50, 95);       // px/sec, varied per cloud
+    ssClouds.push({ el: c, x, speed });
+  }
+
+  function moveScreensaver(dtMs) {
+    const vw = window.innerWidth || 1080;
+    for (let i = ssClouds.length - 1; i >= 0; i--) {
+      const c = ssClouds[i];
+      c.x += c.speed * (dtMs / 1000);
+      if (c.x > vw) { c.el.remove(); ssClouds.splice(i, 1); continue; } // off the right -> gone
+      c.el.style.transform = `translateX(${c.x}px)`;
     }
+  }
+
+  /* Spawn new clouds on a randomized cadence + drift the existing ones. */
+  function tickScreensaver(dtMs) {
+    if (screensaverOn) {
+      ssSpawnAccum += dtMs;
+      if (ssSpawnAccum >= ssNextSpawn) {
+        ssSpawnAccum = 0;
+        ssNextSpawn = ssRand(700, 1900);  // ms between individual spawns
+        spawnScreensaverCloud();
+      }
+    }
+    if (ssClouds.length) moveScreensaver(dtMs);
   }
 
   /* Show/hide the screensaver cloud layer. */
@@ -177,13 +206,17 @@ const Clock = (() => {
     if (!el.screensaver || on === screensaverOn) return;
     screensaverOn = on;
     if (on) {
-      buildScreensaverClouds();
       el.screensaver.classList.add('on');
+      ssSpawnAccum = 0; ssNextSpawn = 0;   // first cloud enters right away
     } else {
       el.screensaver.classList.remove('on');
-      // keep drifting through the fade-out, then remove the cloud nodes
+      // existing clouds keep drifting + fading, then are cleared
       setTimeout(() => {
-        if (!screensaverOn) { ssCloudObjs = []; if (el.screensaver) el.screensaver.innerHTML = ''; }
+        if (!screensaverOn) {
+          ssClouds.forEach((c) => c.el.remove());
+          ssClouds = [];
+          if (el.screensaver) el.screensaver.innerHTML = '';
+        }
       }, 1100);
     }
   }
@@ -305,7 +338,7 @@ const Clock = (() => {
     updateDate(date);
     updateMoon(date);
     if (document.body.dataset.theme === 'auto') { applyAutoTheme(date); moveClouds(dt); }
-    if (ssCloudObjs.length) driftCloudArray(ssCloudObjs, dt); // screensaver (any theme)
+    tickScreensaver(dt); // screensaver clouds (any theme)
 
     // Pass both simulated and real elapsed ms so consumers can advance
     // time-based state (weights) and real-time animations (winding).

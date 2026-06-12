@@ -110,10 +110,11 @@ mechanism still trips).
 ### Screensaver
 
 After the configured idle time (default **5 minutes**, set in settings; 0 disables it),
-puffy clouds spawn at **all levels of the viewport** and drift **over everything** — a
-full-screen cloud screensaver that works in any theme. **Any interaction** (mouse, key,
-touch, scroll) dismisses it and returns to the normal clock. The overlay is click-through,
-so the page stays fully usable underneath.
+clouds drift **in from the left one at a time** at random heights and sizes (some partly off
+the top/bottom edges) and move **over everything**, building up to cover the whole screen —
+in any theme, with no background tint. **Any interaction** (mouse, key, touch, scroll)
+dismisses it and returns to the normal clock. The overlay is click-through, so the page
+stays fully usable underneath.
 
 ### Moon dial
 

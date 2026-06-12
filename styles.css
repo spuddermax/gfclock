@@ -146,11 +146,11 @@ body[data-theme="auto"] #sky { display: block; }
   pointer-events: none;       /* page stays interactive; activity dismisses it */
   opacity: 0;
   transition: opacity 1s ease;
-  /* Translucent sky so the white clouds read on any theme (the clock ghosts
-     through) and fill in for full coverage. */
-  background: linear-gradient(180deg, rgba(120,165,215,0.66), rgba(205,228,248,0.62));
 }
 #screensaver.on { opacity: 1; }
+/* No backdrop tint — just clouds on top. A soft shadow keeps the white clouds
+   readable on any theme (a per-cloud effect, not a full-screen mist). */
+#screensaver .cloud { filter: url(#cloud-goo) drop-shadow(0 4px 7px rgba(55,65,85,0.22)); }
 
 /* ---------- Mountains (auto theme) — illustration from assets/mountains.svg ---------- */
 #mountains {
