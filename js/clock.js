@@ -170,21 +170,28 @@ const Clock = (() => {
     // Random height — allowed to straddle the top/bottom edges so coverage runs
     // right to the edges (and never looks like neat rows).
     c.style.top = Math.round(ssRand(-h * 0.5, vh - h * 0.5)) + 'px';
-    c.style.opacity = ssRand(0.82, 1).toFixed(2);
+    c.style.opacity = ssRand(0.45, 0.7).toFixed(2);      // fairly transparent
     const x = -(w + 60);                                 // start just off the left
-    c.style.transform = `translateX(${x}px)`;
+    // Gentle vertical oscillation (~25% of height) so the path curves, not linear.
+    const amp = h * 0.25;
+    const phase = Math.random() * Math.PI * 2;
+    const omega = (Math.PI * 2) / ssRand(6, 14);         // rad/s — slow bob, varied
+    c.style.transform = `translate(${x}px, ${(amp * Math.sin(phase)).toFixed(1)}px)`;
     el.screensaver.appendChild(c);
     const speed = (vw + w + 140) / ssRand(50, 95);       // px/sec, varied per cloud
-    ssClouds.push({ el: c, x, speed });
+    ssClouds.push({ el: c, x, speed, amp, phase, omega });
   }
 
   function moveScreensaver(dtMs) {
     const vw = window.innerWidth || 1080;
+    const dts = dtMs / 1000;
     for (let i = ssClouds.length - 1; i >= 0; i--) {
       const c = ssClouds[i];
-      c.x += c.speed * (dtMs / 1000);
+      c.x += c.speed * dts;
       if (c.x > vw) { c.el.remove(); ssClouds.splice(i, 1); continue; } // off the right -> gone
-      c.el.style.transform = `translateX(${c.x}px)`;
+      c.phase += c.omega * dts;
+      const y = c.amp * Math.sin(c.phase);
+      c.el.style.transform = `translate(${c.x.toFixed(1)}px, ${y.toFixed(1)}px)`;
     }
   }
 

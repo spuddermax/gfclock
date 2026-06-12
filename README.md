@@ -111,8 +111,8 @@ mechanism still trips).
 
 After the configured idle time (default **5 minutes**, set in settings; 0 disables it),
 clouds drift **in from the left one at a time** at random heights and sizes (some partly off
-the top/bottom edges) and move **over everything**, building up to cover the whole screen —
-in any theme, with no background tint. **Any interaction** (mouse, key, touch, scroll)
+the top/bottom edges), gently bobbing up and down on a **curved path**, and move **over
+everything**, building up to cover the whole screen — in any theme, with no background tint. **Any interaction** (mouse, key, touch, scroll)
 dismisses it and returns to the normal clock. The overlay is click-through, so the page
 stays fully usable underneath.
 
