@@ -55,6 +55,7 @@ Click the **⚙ gear** (top-right) to open the settings drawer:
 | **Ticking sound** | Per-second escapement tick/tock (ticks 24/7; night silence only affects chimes). |
 | **Tick volume** | Independent level for the escapement tick (also used as the winding ratchet). |
 | **Show seconds hand** | Toggle the seconds hand. |
+| **Screensaver after** | Idle minutes (0–30, default **5**; 0 = off) before drifting clouds fill the whole screen as a screensaver. Any interaction dismisses it. |
 | **Time speed** | `1× / 60× / 300× / 3600×` for testing, plus "jump to time" and "reset to now". |
 | **Test chime & strike** | Plays the current melody followed by a 3-count strike. |
 
@@ -106,6 +107,14 @@ the tick plays 4×/second as a ratchet sound. To watch the weights run down quic
 while fast-forwarding (and even when the sound is muted or night-silenced, since the
 mechanism still trips).
 
+### Screensaver
+
+After the configured idle time (default **5 minutes**, set in settings; 0 disables it),
+puffy clouds spawn at **all levels of the viewport** and drift **over everything** — a
+full-screen cloud screensaver that works in any theme. **Any interaction** (mouse, key,
+touch, scroll) dismisses it and returns to the normal clock. The overlay is click-through,
+so the page stays fully usable underneath.
+
 ### Moon dial
 
 Like a real lunar dial, a moon transits the night-sky arch between **two earth globes**.
@@ -126,6 +135,7 @@ Append to the URL to preset state (handy for testing):
 - `?tempo=50..150` — chime tempo percent (note speed within a phrase)
 - `?gap=0..3` — seconds of silence between chime phrases (default `1.0`)
 - `?strikegap=0.5..3` — seconds between hour strikes (default `1.5`)
+- `?screensaver=0..30` — idle minutes before the cloud screensaver (`0` = off, default `5`)
 - `?time=HH:MM` — jump the clock to a time
 - `?moon=0..1` — pin the moon phase (`0`/`1` = new, `0.5` = full)
 

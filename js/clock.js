@@ -33,6 +33,7 @@ const Clock = (() => {
     el.clouds = document.getElementById('clouds');
     el.overcast = document.getElementById('overcast');
     el.mountains = document.getElementById('mountains');
+    el.screensaver = document.getElementById('screensaver');
     el.stage = document.getElementById('stage');
   }
 
@@ -130,17 +131,60 @@ const Clock = (() => {
     }
   }
 
-  /* Drift clouds left->right in real time; the instant a cloud clears the
-     right edge it wraps back just off the left, so it respawns promptly. */
-  function moveClouds(dtMs) {
-    if (!cloudObjs.length) return;
+  /* Drift a set of clouds left->right in real time; the instant a cloud clears
+     the right edge it wraps back just off the left, so it respawns promptly. */
+  function driftCloudArray(arr, dtMs) {
+    if (!arr.length) return;
     const vw = window.innerWidth || 1080;
     const span = vw + CLOUD_MARGIN;
     const dx = (span / CLOUD_PERIOD) * (dtMs / 1000);
-    for (const c of cloudObjs) {
+    for (const c of arr) {
       c.x += dx;
       if (c.x > vw) c.x -= span;   // fully past the right edge -> back to the left
       c.el.style.transform = `translateX(${c.x}px)`;
+    }
+  }
+  function moveClouds(dtMs) { driftCloudArray(cloudObjs, dtMs); }
+
+  /* ---------- Screensaver clouds (over everything, all levels) ---------- */
+  let ssCloudObjs = [];
+  let screensaverOn = false;
+  const SS_COUNT = 30; // generous cover across the full viewport
+
+  function buildScreensaverClouds() {
+    if (!el.screensaver) return;
+    const vw = window.innerWidth || 1080;
+    const span = vw + CLOUD_MARGIN;
+    el.screensaver.innerHTML = '';
+    ssCloudObjs = [];
+    for (let i = 0; i < SS_COUNT; i++) {
+      const w = 220 + (i * 53) % 260;          // 220..479
+      const c = document.createElement('div');
+      c.className = 'cloud';
+      c.style.top = ((i * 37) % 92) + '%';     // spawn at ALL levels of the viewport
+      c.style.width = w + 'px';
+      c.style.height = Math.round(w * 0.36) + 'px';
+      c.style.opacity = (0.82 + ((i * 13) % 18) / 100).toFixed(2);
+      const x = (i / SS_COUNT) * span - CLOUD_MARGIN;  // evenly phased for steady cover
+      c.style.transform = `translateX(${x}px)`;
+      el.screensaver.appendChild(c);
+      ssCloudObjs.push({ el: c, x });
+    }
+  }
+
+  /* Show/hide the screensaver cloud layer. */
+  function setScreensaver(on) {
+    if (!el.screensaver || on === screensaverOn) return;
+    screensaverOn = on;
+    if (on) {
+      buildScreensaverClouds();
+      el.screensaver.classList.add('on');
+    } else {
+      el.screensaver.classList.remove('on');
+      // keep drifting through the fade-out, then remove the cloud nodes
+      setTimeout(() => {
+        if (!screensaverOn) { ssCloudObjs = []; if (el.screensaver) el.screensaver.innerHTML = ''; }
+      }, 1100);
     }
   }
 
@@ -261,6 +305,7 @@ const Clock = (() => {
     updateDate(date);
     updateMoon(date);
     if (document.body.dataset.theme === 'auto') { applyAutoTheme(date); moveClouds(dt); }
+    if (ssCloudObjs.length) driftCloudArray(ssCloudObjs, dt); // screensaver (any theme)
 
     // Pass both simulated and real elapsed ms so consumers can advance
     // time-based state (weights) and real-time animations (winding).
@@ -292,5 +337,5 @@ const Clock = (() => {
   function showSeconds(show) { el.subSeconds.style.display = show ? '' : 'none'; }
   function setCloudDensity(pct) { buildClouds(pct); }
 
-  return { init, setSpeed, getSpeed, setTime, getTime, setMoonPhase, setOnTick, showSeconds, setCloudDensity };
+  return { init, setSpeed, getSpeed, setTime, getTime, setMoonPhase, setOnTick, showSeconds, setCloudDensity, setScreensaver };
 })();

@@ -19,6 +19,7 @@
     chimeTempo: 100, // percent; 100 = normal, lower = slower/more spacious
     phraseGap: 1.0,  // seconds of silence between chime phrases
     strikeGap: 1.5,  // seconds between hour strikes
+    screensaverMin: 5, // idle minutes before the cloud screensaver (0 = off)
     speed: 1,
   };
 
@@ -33,6 +34,7 @@
   if (params.has('tempo')) settings.chimeTempo = Number(params.get('tempo')) || settings.chimeTempo;
   if (params.has('gap')) settings.phraseGap = Number(params.get('gap'));
   if (params.has('strikegap')) settings.strikeGap = Number(params.get('strikegap'));
+  if (params.has('screensaver')) settings.screensaverMin = Number(params.get('screensaver'));
 
   function load() {
     try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }
@@ -40,6 +42,26 @@
   }
   function save() {
     localStorage.setItem(STORE_KEY, JSON.stringify(settings));
+  }
+
+  // ---- Screensaver (idle clouds) ----
+  let lastActivityAt = Date.now();
+  let screensaverActive = false;
+
+  function onActivity() {
+    lastActivityAt = Date.now();
+    if (screensaverActive) {        // any interaction dismisses it
+      screensaverActive = false;
+      Clock.setScreensaver(false);
+    }
+  }
+  function checkIdle() {
+    const mins = settings.screensaverMin;
+    if (screensaverActive || !(mins > 0)) return;
+    if (Date.now() - lastActivityAt >= mins * 60000) {
+      screensaverActive = true;
+      Clock.setScreensaver(true);
+    }
   }
 
   // ---- Chime scheduling state ----
@@ -278,6 +300,8 @@
     el.strikeGapRange = document.getElementById('strikeGapRange');
     el.strikeGapReadout = document.getElementById('strikeGapReadout');
     el.secondsChk = document.getElementById('secondsChk');
+    el.ssRange = document.getElementById('ssRange');
+    el.ssReadout = document.getElementById('ssReadout');
     el.testChime = document.getElementById('testChime');
     el.setTime = document.getElementById('setTime');
     el.applyTime = document.getElementById('applyTime');
@@ -315,6 +339,15 @@
   function applyChime(chime) {
     settings.chime = chime;
     setActive(el.chimeSeg, 'chime', chime);
+    save();
+  }
+
+  function applyScreensaver(min) {
+    min = Math.max(0, Math.min(30, Math.round(Number(min) || 0)));
+    settings.screensaverMin = min;
+    if (el.ssRange) el.ssRange.value = min;
+    if (el.ssReadout) el.ssReadout.textContent = min === 0 ? 'Off' : min + ' min';
+    lastActivityAt = Date.now(); // restart the idle countdown with the new value
     save();
   }
 
@@ -408,6 +441,7 @@
       Clock.showSeconds(settings.showSeconds);
       save();
     });
+    el.ssRange.addEventListener('input', () => applyScreensaver(Number(el.ssRange.value)));
 
     el.testChime.addEventListener('click', () => {
       ChimeAudio.unlock();
@@ -475,6 +509,7 @@
     el.tickChk.checked = settings.tick;
     el.tickVolRange.value = settings.tickVolume;
     el.secondsChk.checked = settings.showSeconds;
+    applyScreensaver(settings.screensaverMin);
 
     ChimeAudio.setVolume(settings.volume / 100);
     ChimeAudio.setTickVolume(settings.tickVolume / 100);
@@ -498,5 +533,11 @@
       Clock.setTime(d.getTime());
     }
     if (params.has('moon')) Clock.setMoonPhase(Number(params.get('moon')));
+
+    // Idle detection for the screensaver: any user input counts as activity
+    // (and dismisses an active screensaver); a 1s poll triggers it when idle.
+    ['mousemove', 'mousedown', 'pointerdown', 'keydown', 'wheel', 'touchstart', 'click', 'scroll']
+      .forEach((ev) => window.addEventListener(ev, onActivity, { passive: true }));
+    setInterval(checkIdle, 1000);
   });
 })();
