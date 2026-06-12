@@ -170,7 +170,7 @@ const Clock = (() => {
     // Random height — allowed to straddle the top/bottom edges so coverage runs
     // right to the edges (and never looks like neat rows).
     c.style.top = Math.round(ssRand(-h * 0.5, vh - h * 0.5)) + 'px';
-    c.style.opacity = ssRand(0.66, 0.95).toFixed(2);     // same range as the normal sky clouds
+    c.style.opacity = ssRand(0.05, 0.34).toFixed(2);     // inverse of the normal range (1 - 0.66..0.95)
     const x = -(w + 60);                                 // start just off the left
     // Gentle vertical oscillation (~25% of height) so the path curves, not linear.
     const amp = h * 0.25;
