@@ -154,11 +154,11 @@ const Clock = (() => {
   let screensaverOn = false;
   let ssSpawnAccum = 0;       // ms since the last spawn
   let ssNextSpawn = 0;        // ms until the next spawn
-  const SS_MAX = 48;          // cap on simultaneous clouds
+  let ssMax = 40;             // cap on simultaneous clouds (user-settable)
   const ssRand = (a, b) => a + Math.random() * (b - a);
 
   function spawnScreensaverCloud() {
-    if (!el.screensaver || ssClouds.length >= SS_MAX) return;
+    if (!el.screensaver || ssClouds.length >= ssMax) return;
     const vw = window.innerWidth || 1080;
     const vh = window.innerHeight || 1920;
     const w = ssRand(170, 460);
@@ -376,6 +376,7 @@ const Clock = (() => {
   function setOnTick(fn) { onTick = fn; }
   function showSeconds(show) { el.subSeconds.style.display = show ? '' : 'none'; }
   function setCloudDensity(pct) { buildClouds(pct); }
+  function setScreensaverClouds(n) { if (Number(n) > 0) ssMax = Math.round(Number(n)); }
 
-  return { init, setSpeed, getSpeed, setTime, getTime, setMoonPhase, setOnTick, showSeconds, setCloudDensity, setScreensaver };
+  return { init, setSpeed, getSpeed, setTime, getTime, setMoonPhase, setOnTick, showSeconds, setCloudDensity, setScreensaver, setScreensaverClouds };
 })();

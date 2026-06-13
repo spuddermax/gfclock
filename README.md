@@ -56,6 +56,7 @@ Click the **⚙ gear** (top-right) to open the settings drawer:
 | **Tick volume** | Independent level for the escapement tick (also used as the winding ratchet). |
 | **Show seconds hand** | Toggle the seconds hand. |
 | **Screensaver after** | Idle minutes (0–30, default **5**; 0 = off) before drifting clouds fill the whole screen as a screensaver. Any interaction dismisses it. |
+| **Screensaver clouds** | How many clouds cover the screen during the screensaver (5–50, default **40**). |
 | **Time speed** | `1× / 60× / 300× / 3600×` for testing, plus "jump to time" and "reset to now". |
 | **Test chime & strike** | Plays the current melody followed by a 3-count strike. |
 
@@ -137,6 +138,7 @@ Append to the URL to preset state (handy for testing):
 - `?gap=0..3` — seconds of silence between chime phrases (default `1.0`)
 - `?strikegap=0.5..3` — seconds between hour strikes (default `1.5`)
 - `?screensaver=0..30` — idle minutes before the cloud screensaver (`0` = off, default `5`)
+- `?ssclouds=5..50` — number of screensaver clouds (default `40`)
 - `?time=HH:MM` — jump the clock to a time
 - `?moon=0..1` — pin the moon phase (`0`/`1` = new, `0.5` = full)
 

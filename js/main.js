@@ -19,7 +19,8 @@
     chimeTempo: 100, // percent; 100 = normal, lower = slower/more spacious
     phraseGap: 1.0,  // seconds of silence between chime phrases
     strikeGap: 1.5,  // seconds between hour strikes
-    screensaverMin: 5, // idle minutes before the cloud screensaver (0 = off)
+    screensaverMin: 5,    // idle minutes before the cloud screensaver (0 = off)
+    screensaverClouds: 40, // max simultaneous screensaver clouds
     speed: 1,
   };
 
@@ -35,6 +36,7 @@
   if (params.has('gap')) settings.phraseGap = Number(params.get('gap'));
   if (params.has('strikegap')) settings.strikeGap = Number(params.get('strikegap'));
   if (params.has('screensaver')) settings.screensaverMin = Number(params.get('screensaver'));
+  if (params.has('ssclouds')) settings.screensaverClouds = Number(params.get('ssclouds'));
 
   function load() {
     try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }
@@ -302,6 +304,8 @@
     el.secondsChk = document.getElementById('secondsChk');
     el.ssRange = document.getElementById('ssRange');
     el.ssReadout = document.getElementById('ssReadout');
+    el.ssCloudRange = document.getElementById('ssCloudRange');
+    el.ssCloudReadout = document.getElementById('ssCloudReadout');
     el.testChime = document.getElementById('testChime');
     el.setTime = document.getElementById('setTime');
     el.applyTime = document.getElementById('applyTime');
@@ -348,6 +352,15 @@
     if (el.ssRange) el.ssRange.value = min;
     if (el.ssReadout) el.ssReadout.textContent = min === 0 ? 'Off' : min + ' min';
     lastActivityAt = Date.now(); // restart the idle countdown with the new value
+    save();
+  }
+
+  function applyScreensaverClouds(n) {
+    n = Math.max(5, Math.min(50, Math.round(Number(n) || 40)));
+    settings.screensaverClouds = n;
+    Clock.setScreensaverClouds(n);
+    if (el.ssCloudRange) el.ssCloudRange.value = n;
+    if (el.ssCloudReadout) el.ssCloudReadout.textContent = String(n);
     save();
   }
 
@@ -442,6 +455,7 @@
       save();
     });
     el.ssRange.addEventListener('input', () => applyScreensaver(Number(el.ssRange.value)));
+    el.ssCloudRange.addEventListener('input', () => applyScreensaverClouds(Number(el.ssCloudRange.value)));
 
     el.testChime.addEventListener('click', () => {
       ChimeAudio.unlock();
@@ -510,6 +524,7 @@
     el.tickVolRange.value = settings.tickVolume;
     el.secondsChk.checked = settings.showSeconds;
     applyScreensaver(settings.screensaverMin);
+    applyScreensaverClouds(settings.screensaverClouds);
 
     ChimeAudio.setVolume(settings.volume / 100);
     ChimeAudio.setTickVolume(settings.tickVolume / 100);
