@@ -123,19 +123,16 @@ body[data-theme="auto"] #sky { display: block; }
    Gradient radii are percentages so the puffiness scales with cloud size. */
 .cloud {
   position: absolute;
-  /* Overlapping soft white lobes + a wide flat base = a puffy cumulus. */
-  background:
-    radial-gradient(26% 74% at 24% 66%, #fff 0 70%, transparent 72%),
-    radial-gradient(35% 100% at 45% 44%, #fff 0 72%, transparent 74%),
-    radial-gradient(30% 86% at 64% 58%, #fff 0 72%, transparent 74%),
-    radial-gradient(23% 67% at 82% 70%, #fff 0 70%, transparent 72%),
-    radial-gradient(62% 55% at 52% 86%, #fff 0 76%, transparent 79%);
   /* Gooey filter merges the lobes into one smooth shape with rounded edges. */
   filter: url(#cloud-goo);
   will-change: transform;
   /* Position (translateX) is driven by JS so clouds wrap promptly and stay
      evenly spaced by density — see moveClouds() in clock.js. */
 }
+
+/* Each cloud's shape (overlapping soft white lobes + a wide flat base) is
+   generated procedurally in clock.js and set as an inline `background`, so the
+   sky shows an unlimited variety of forms rather than a fixed set of stamps. */
 
 /* ---------- Screensaver: full-screen drifting clouds ---------- */
 #screensaver {

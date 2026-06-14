@@ -95,6 +95,51 @@ const Clock = (() => {
     return specs;
   })();
 
+  /* Build a unique cloud shape from a cluster of soft white "puff" lobes. Every
+     cloud gets its own random set, so there's an unlimited variety of forms and
+     the goo filter merges the lobes into one smooth, all-curves blob. There is no
+     flat base — the bottom is as bumpy as the top, made of the same round puffs.
+     Each lobe is kept fully inside the element box: a background only paints
+     inside its box, so a lobe spilling past an edge would be sliced into a
+     straight line — clamping guarantees the whole outline stays curved.
+     Returns a CSS `background` value of stacked radial-gradients. */
+  function randomCloudBackground() {
+    const FADE = 0.82;   // a lobe's white reaches ~82% of its gradient radius
+    const rand = (a, b) => a + Math.random() * (b - a);
+    // Keep v inside [lo,hi]; if the lobe is too big to fit (hi<lo), sit it centred.
+    const clamp = (v, lo, hi) => (hi < lo ? (lo + hi) / 2 : Math.max(lo, Math.min(hi, v)));
+    const lobes = [];
+
+    // Add one round-ish puff, biased into the given x/size/y ranges, then clamped
+    // so its painted area never touches the box edge (no straight cuts).
+    function puff(xLo, xHi, hMin, hMax, yLo, yHi) {
+      const h = rand(hMin, hMax);                  // vertical radius (% of box height)
+      const w = h * rand(0.30, 0.46);              // horizontal radius — round-ish on screen
+      const sv = h * FADE, sh = w * FADE;          // painted half-extents
+      const y = clamp(rand(yLo, yHi), sv + 2, 98 - sv);
+      const x = clamp(rand(xLo, xHi), sh + 2, 98 - sh);
+      const c = 70 + Math.floor(Math.random() * 4);
+      lobes.push(`radial-gradient(${Math.round(w)}% ${Math.round(h)}% at ${Math.round(x)}% ${Math.round(y)}%, #fff 0 ${c}%, transparent ${c + 2}%)`);
+    }
+
+    // A core row of big puffs spanning left→right keeps the cloud connected.
+    const core = 3 + Math.floor(Math.random() * 2);          // 3–4
+    for (let i = 0; i < core; i++) {
+      const f = (i + 0.5) / core;
+      puff(f * 70 + 15 - 8, f * 70 + 15 + 8, 40, 56, 46, 60);
+    }
+    // Smaller bumps scattered all around — including low down — give the irregular,
+    // curvy outline and the bumpy bottom (in place of the old flat base).
+    const bumps = 4 + Math.floor(Math.random() * 4);         // 4–7
+    for (let i = 0; i < bumps; i++) puff(15, 85, 22, 40, 35, 82);
+
+    return lobes.join(', ');
+  }
+
+  // Cache sky-cloud shapes by index so the same cloud keeps its form across
+  // rebuilds (e.g. when the density slider re-runs buildClouds).
+  const skyCloudBgs = [];
+
   const CLOUD_PERIOD = 90;    // seconds for one cloud to drift across the sky
   const CLOUD_MARGIN = 360;   // px off-screen at each wrap (>= widest cloud)
   let cloudObjs = [];         // { el, x } for each live cloud, moved each frame
@@ -117,6 +162,8 @@ const Clock = (() => {
       const s = CLOUD_SPECS[i];
       const c = document.createElement('div');
       c.className = 'cloud';
+      if (!skyCloudBgs[i]) skyCloudBgs[i] = randomCloudBackground();
+      c.style.background = skyCloudBgs[i];
       c.style.top = s.top + '%';
       c.style.width = s.w + 'px';
       c.style.height = s.h + 'px';
@@ -165,6 +212,7 @@ const Clock = (() => {
     const h = Math.round(w * 0.36);
     const c = document.createElement('div');
     c.className = 'cloud';
+    c.style.background = randomCloudBackground();  // a fresh unique shape each spawn
     c.style.width = w + 'px';
     c.style.height = h + 'px';
     // Random height — allowed to straddle the top/bottom edges so coverage runs
