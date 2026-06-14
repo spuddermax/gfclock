@@ -152,6 +152,22 @@ body[data-theme="auto"] #sky { display: block; }
    readable on any theme (a per-cloud effect, not a full-screen mist). */
 #screensaver .cloud { filter: url(#cloud-goo) drop-shadow(0 4px 7px rgba(55,65,85,0.22)); }
 
+/* A single purple firefly (from purplefirefly-pump) drifts above the clouds.
+   Position/rotation/opacity are driven per-frame by JS — see Firefly in clock.js. */
+.screensaver-firefly {
+  position: absolute;
+  top: 0; left: 0;                 /* JS translate() places it; transform-origin centres it */
+  z-index: 2;                      /* stays above the (later-spawned) drifting clouds */
+  opacity: 0;
+  will-change: transform, opacity;
+  filter: drop-shadow(0 0 10px rgba(111, 66, 193, 0.5));  /* soft purple glow */
+}
+.screensaver-firefly img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 /* ---------- Mountains (auto theme) — illustration from assets/mountains.svg ---------- */
 #mountains {
   position: absolute;

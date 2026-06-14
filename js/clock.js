@@ -195,6 +195,139 @@ const Clock = (() => {
     }
   }
 
+  /* ---------- Screensaver firefly ----------
+     A single purple firefly (ported from the purplefirefly-pump screensaver)
+     wanders the screen along chained quadratic Bézier curves, fading in and
+     rotating to face its direction of travel. Drifts above the clouds. */
+  const FLY = {
+    SPEED: 1,              // movement speed multiplier
+    SIZE_PERCENT: 12,      // render size as % of viewport width
+    BOUNCE_MARGIN: 50,     // px from each edge the firefly turns back at
+    ROTATION_OFFSET: 90,   // deg so the art (nose-up) faces its travel direction
+    FADE_IN_MS: 800,       // fade-in on (re)spawn
+  };
+
+  class Firefly {
+    constructor() {
+      this.el = null;
+      this.reset();
+    }
+    reset() {
+      this.x = 0; this.y = 0;
+      this.velocityX = 0; this.velocityY = 0;
+      this.rotation = 0;
+      this.opacity = 0;
+      this.age = 0;
+      this.curveProgress = 0;
+      this.curveStartX = 0; this.curveStartY = 0;
+      this.curveControlX = 0; this.curveControlY = 0;
+      this.targetX = 0; this.targetY = 0;
+    }
+    initialise(startX, startY) {
+      this.reset();
+      this.x = startX; this.y = startY;
+
+      const speed = 100 * FLY.SPEED;
+      const initialAngle = Math.random() * Math.PI * 2;
+      const distance = 200 + Math.random() * 300;          // 200-500px
+      this.targetX = startX + Math.cos(initialAngle) * distance;
+      this.targetY = startY + Math.sin(initialAngle) * distance;
+
+      // Control point mid-way with a small perpendicular offset (a gentle arc).
+      const midX = (startX + this.targetX) / 2;
+      const midY = (startY + this.targetY) / 2;
+      const perpDist = 30 + Math.random() * 60;
+      const side = Math.random() < 0.5 ? 1 : -1;
+      const perpAngle = initialAngle + side * Math.PI / 2 + (Math.random() - 0.5) * Math.PI / 4;
+      this.curveControlX = midX + Math.cos(perpAngle) * perpDist;
+      this.curveControlY = midY + Math.sin(perpAngle) * perpDist;
+
+      this.curveStartX = startX; this.curveStartY = startY;
+
+      const angle = Math.atan2(this.targetY - this.y, this.targetX - this.x);
+      this.velocityX = Math.cos(angle) * speed;
+      this.velocityY = Math.sin(angle) * speed;
+      this.rotation = angle * 180 / Math.PI + FLY.ROTATION_OFFSET;
+    }
+    update(deltaTime, width, height) {
+      // Fade in
+      this.age += deltaTime;
+      this.opacity = Math.min(1, this.age / (FLY.FADE_IN_MS / 1000));
+
+      // Advance along the current curve.
+      const curveSpeed = 0.5 * FLY.SPEED;
+      let p = this.curveProgress + curveSpeed * deltaTime;
+
+      // At 80% of the leg, plot the next one, entering along the current tangent.
+      if (p >= 0.8) {
+        const t = 0.8;
+        const tangentX = -2 * (1 - t) * this.curveStartX + 2 * (1 - 2 * t) * this.curveControlX + 2 * t * this.targetX;
+        const tangentY = -2 * (1 - t) * this.curveStartY + 2 * (1 - 2 * t) * this.curveControlY + 2 * t * this.targetY;
+        const tangMag = Math.sqrt(tangentX * tangentX + tangentY * tangentY) || 1;
+        const normTanX = tangentX / tangMag;
+        const normTanY = tangentY / tangMag;
+
+        const targetDistance = 200 + Math.random() * 300;
+        const angleVariation = (Math.random() - 0.5) * Math.PI / 24;  // ±3.75°
+        const newAngle = Math.atan2(normTanY, normTanX) + angleVariation;
+
+        const newTargetX = this.x + Math.cos(newAngle) * targetDistance;
+        const newTargetY = this.y + Math.sin(newAngle) * targetDistance;
+
+        const m = FLY.BOUNCE_MARGIN;
+        this.targetX = Math.max(m, Math.min(width - m, newTargetX));
+        this.targetY = Math.max(m, Math.min(height - m, newTargetY));
+
+        const controlDist = targetDistance / 2;
+        this.curveControlX = this.x + normTanX * controlDist;
+        this.curveControlY = this.y + normTanY * controlDist;
+        this.curveStartX = this.x;
+        this.curveStartY = this.y;
+        p = 0;
+      }
+
+      // Position + velocity from the quadratic Bézier at progress p.
+      const t = p;
+      this.x = (1 - t) * (1 - t) * this.curveStartX + 2 * (1 - t) * t * this.curveControlX + t * t * this.targetX;
+      this.y = (1 - t) * (1 - t) * this.curveStartY + 2 * (1 - t) * t * this.curveControlY + t * t * this.targetY;
+      this.velocityX = -2 * (1 - t) * this.curveStartX + 2 * (1 - 2 * t) * this.curveControlX + 2 * t * this.targetX;
+      this.velocityY = -2 * (1 - t) * this.curveStartY + 2 * (1 - 2 * t) * this.curveControlY + 2 * t * this.targetY;
+      this.rotation = Math.atan2(this.velocityY, this.velocityX) * 180 / Math.PI + FLY.ROTATION_OFFSET;
+
+      this.curveProgress = p;
+    }
+  }
+
+  let firefly = null;  // the single screensaver firefly, live only while on
+
+  function spawnFirefly() {
+    if (!el.screensaver) return;
+    const vw = window.innerWidth || 1080;
+    const vh = window.innerHeight || 1920;
+    const size = Math.round(vw * FLY.SIZE_PERCENT / 100);
+    const d = document.createElement('div');
+    d.className = 'screensaver-firefly';
+    d.style.width = size + 'px';
+    d.style.height = size + 'px';
+    const img = document.createElement('img');
+    img.src = 'assets/PurpleFirefly256.png';
+    img.alt = 'Purple firefly';
+    d.appendChild(img);
+    el.screensaver.appendChild(d);
+    firefly = new Firefly();
+    firefly.el = d;
+    firefly.initialise(vw / 2, vh / 2);
+  }
+
+  function moveFirefly(dtMs) {
+    if (!firefly) return;
+    firefly.update(dtMs / 1000, window.innerWidth || 1080, window.innerHeight || 1920);
+    const d = firefly.el;
+    d.style.opacity = firefly.opacity.toFixed(3);
+    d.style.transform =
+      `translate(${(firefly.x).toFixed(1)}px, ${(firefly.y).toFixed(1)}px) translate(-50%, -50%) rotate(${firefly.rotation.toFixed(1)}deg)`;
+  }
+
   /* Spawn new clouds on a randomized cadence + drift the existing ones. */
   function tickScreensaver(dtMs) {
     if (screensaverOn) {
@@ -206,6 +339,7 @@ const Clock = (() => {
       }
     }
     if (ssClouds.length) moveScreensaver(dtMs);
+    if (firefly) moveFirefly(dtMs);
   }
 
   /* Show/hide the screensaver cloud layer. */
@@ -215,8 +349,10 @@ const Clock = (() => {
     if (on) {
       el.screensaver.classList.add('on');
       ssSpawnAccum = 0; ssNextSpawn = 0;   // first cloud enters right away
+      spawnFirefly();                      // a single purple firefly joins the drift
     } else {
       el.screensaver.classList.remove('on');
+      firefly = null;                      // stop animating; element fades + is cleared below
       // existing clouds keep drifting + fading, then are cleared
       setTimeout(() => {
         if (!screensaverOn) {
