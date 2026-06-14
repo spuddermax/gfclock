@@ -21,6 +21,7 @@
     strikeGap: 1.5,  // seconds between hour strikes
     screensaverMin: 5,    // idle minutes before the cloud screensaver (0 = off)
     screensaverClouds: 40, // max simultaneous screensaver clouds
+    screensaverFirefly: true, // show the purple firefly over the screensaver clouds
     speed: 1,
   };
 
@@ -37,6 +38,7 @@
   if (params.has('strikegap')) settings.strikeGap = Number(params.get('strikegap'));
   if (params.has('screensaver')) settings.screensaverMin = Number(params.get('screensaver'));
   if (params.has('ssclouds')) settings.screensaverClouds = Number(params.get('ssclouds'));
+  if (params.has('ssfirefly')) settings.screensaverFirefly = params.get('ssfirefly') !== '0';
 
   function load() {
     try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }
@@ -306,6 +308,7 @@
     el.ssReadout = document.getElementById('ssReadout');
     el.ssCloudRange = document.getElementById('ssCloudRange');
     el.ssCloudReadout = document.getElementById('ssCloudReadout');
+    el.ssFireflyChk = document.getElementById('ssFireflyChk');
     el.testChime = document.getElementById('testChime');
     el.setTime = document.getElementById('setTime');
     el.applyTime = document.getElementById('applyTime');
@@ -361,6 +364,13 @@
     Clock.setScreensaverClouds(n);
     if (el.ssCloudRange) el.ssCloudRange.value = n;
     if (el.ssCloudReadout) el.ssCloudReadout.textContent = String(n);
+    save();
+  }
+
+  function applyScreensaverFirefly(on) {
+    settings.screensaverFirefly = !!on;
+    Clock.setFirefly(settings.screensaverFirefly);
+    if (el.ssFireflyChk) el.ssFireflyChk.checked = settings.screensaverFirefly;
     save();
   }
 
@@ -456,6 +466,7 @@
     });
     el.ssRange.addEventListener('input', () => applyScreensaver(Number(el.ssRange.value)));
     el.ssCloudRange.addEventListener('input', () => applyScreensaverClouds(Number(el.ssCloudRange.value)));
+    el.ssFireflyChk.addEventListener('change', () => applyScreensaverFirefly(el.ssFireflyChk.checked));
 
     el.testChime.addEventListener('click', () => {
       ChimeAudio.unlock();
@@ -525,6 +536,7 @@
     el.secondsChk.checked = settings.showSeconds;
     applyScreensaver(settings.screensaverMin);
     applyScreensaverClouds(settings.screensaverClouds);
+    applyScreensaverFirefly(settings.screensaverFirefly);
 
     ChimeAudio.setVolume(settings.volume / 100);
     ChimeAudio.setTickVolume(settings.tickVolume / 100);

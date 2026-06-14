@@ -298,10 +298,11 @@ const Clock = (() => {
     }
   }
 
-  let firefly = null;  // the single screensaver firefly, live only while on
+  let firefly = null;        // the single screensaver firefly, live only while on
+  let fireflyEnabled = true; // user-settable; off hides it from the screensaver
 
   function spawnFirefly() {
-    if (!el.screensaver) return;
+    if (!el.screensaver || !fireflyEnabled) return;
     const vw = window.innerWidth || 1080;
     const vh = window.innerHeight || 1920;
     const size = Math.round(vw * FLY.SIZE_PERCENT / 100);
@@ -513,6 +514,13 @@ const Clock = (() => {
   function showSeconds(show) { el.subSeconds.style.display = show ? '' : 'none'; }
   function setCloudDensity(pct) { buildClouds(pct); }
   function setScreensaverClouds(n) { if (Number(n) > 0) ssMax = Math.round(Number(n)); }
+  /* Toggle the screensaver firefly. Applies live if the screensaver is showing. */
+  function setFirefly(on) {
+    fireflyEnabled = !!on;
+    if (!screensaverOn) return;
+    if (fireflyEnabled && !firefly) spawnFirefly();
+    else if (!fireflyEnabled && firefly) { firefly.el.remove(); firefly = null; }
+  }
 
-  return { init, setSpeed, getSpeed, setTime, getTime, setMoonPhase, setOnTick, showSeconds, setCloudDensity, setScreensaver, setScreensaverClouds };
+  return { init, setSpeed, getSpeed, setTime, getTime, setMoonPhase, setOnTick, showSeconds, setCloudDensity, setScreensaver, setScreensaverClouds, setFirefly };
 })();
