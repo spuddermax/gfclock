@@ -92,6 +92,17 @@ const Clock = (() => {
         op: 0.66 + ((i * 17) % 30) / 100,    // 0.66..0.95
       });
     }
+    // Enlarge the deck: the biggest clouds grow +75% while the smallest keep
+    // their current size (a linear remap of width anchored at the smallest;
+    // height scales with width so proportions hold).
+    const ws = specs.map((s) => s.w);
+    const minW = Math.min(...ws), maxW = Math.max(...ws);
+    const f = (maxW * 1.75 - minW) / (maxW - minW);
+    for (const s of specs) {
+      const nw = Math.round(minW + (s.w - minW) * f);
+      s.h = Math.round(s.h * nw / s.w);
+      s.w = nw;
+    }
     return specs;
   })();
 
@@ -141,7 +152,7 @@ const Clock = (() => {
   const skyCloudBgs = [];
 
   const CLOUD_PERIOD = 90;    // seconds for one cloud to drift across the sky
-  const CLOUD_MARGIN = 360;   // px off-screen at each wrap (>= widest cloud)
+  const CLOUD_MARGIN = 720;   // px off-screen at each wrap (>= widest cloud, now ~681)
   let cloudObjs = [];         // { el, x } for each live cloud, moved each frame
   let cloudDensity = 20;      // current density %, used for the overcast haze
 
@@ -208,7 +219,7 @@ const Clock = (() => {
     if (!el.screensaver || ssClouds.length >= ssMax) return;
     const vw = window.innerWidth || 1080;
     const vh = window.innerHeight || 1920;
-    const w = ssRand(170, 460);
+    const w = ssRand(170, 805);   // smallest unchanged; biggest +75% (was 460)
     const h = Math.round(w * 0.36);
     const c = document.createElement('div');
     c.className = 'cloud';
@@ -315,8 +326,10 @@ const Clock = (() => {
         const normTanX = tangentX / tangMag;
         const normTanY = tangentY / tangMag;
 
-        const targetDistance = 200 + Math.random() * 300;
-        const angleVariation = (Math.random() - 0.5) * Math.PI / 24;  // ±3.75°
+        const targetDistance = 140 + Math.random() * 200;   // 140–340px legs — retargets sooner
+        // Turn the heading a moderate random amount each leg so it wanders on its
+        // own, instead of holding a near-straight line until it reaches an edge.
+        const angleVariation = (Math.random() - 0.5) * (Math.PI / 2.6);  // ±~35°
         const newAngle = Math.atan2(normTanY, normTanX) + angleVariation;
 
         const newTargetX = this.x + Math.cos(newAngle) * targetDistance;
@@ -326,6 +339,10 @@ const Clock = (() => {
         this.targetX = Math.max(m, Math.min(width - m, newTargetX));
         this.targetY = Math.max(m, Math.min(height - m, newTargetY));
 
+        // Control point sits ON the entry tangent so the new leg leaves in the
+        // exact direction the previous one arrived — the heading is continuous
+        // (no kink). The leg still curves: it bends smoothly from that tangent
+        // toward the re-aimed target, so the turn happens gradually.
         const controlDist = targetDistance / 2;
         this.curveControlX = this.x + normTanX * controlDist;
         this.curveControlY = this.y + normTanY * controlDist;

@@ -414,6 +414,12 @@
       ChimeAudio.unlock(); // user gesture unlocks audio
     });
     el.closeDrawer.addEventListener('click', () => el.drawer.classList.remove('open'));
+    // Click anywhere outside the open drawer (and not on the gear) closes it.
+    document.addEventListener('click', (e) => {
+      if (!el.drawer.classList.contains('open')) return;
+      if (el.drawer.contains(e.target) || el.gearBtn.contains(e.target)) return;
+      el.drawer.classList.remove('open');
+    });
 
     el.themeSeg.addEventListener('click', (e) => {
       if (e.target.dataset.theme) applyTheme(e.target.dataset.theme);
