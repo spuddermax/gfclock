@@ -153,9 +153,18 @@ const Clock = (() => {
   const skyCloudBgs = [];
 
   const CLOUD_PERIOD = 90;    // seconds for one cloud to drift across the sky
-  const CLOUD_MARGIN = 720;   // px off-screen at each wrap (>= widest cloud, now ~681)
+  const CLOUD_MARGIN_BASE = 720; // px off-screen at each wrap on the 1080-wide reference
+  // The sky/cloud layer fills the whole viewport (it isn't inside the scaled
+  // stage), so cloud pixel sizes are scaled by the viewport width relative to
+  // the 1080px design width. This keeps clouds the same size *relative to the
+  // screen* on any device — identical to now on a 1080-wide display, and not
+  // oversized on a phone.
+  const CLOUD_REF_W = 1080;
+  const cloudScale = () => (window.innerWidth || CLOUD_REF_W) / CLOUD_REF_W;
+  const cloudMargin = () => CLOUD_MARGIN_BASE * cloudScale();
   let cloudObjs = [];         // { el, x } for each live cloud, moved each frame
   let cloudDensity = 20;      // current density %, used for the overcast haze
+  let lastBuiltWidth = 0;     // viewport width the sky clouds were last sized for
 
   // How opaque the overcast sheet is for a given density (0 until ~30%, rising
   // to a near-solid deck at 100% so it reads as mostly overcast).
@@ -167,9 +176,12 @@ const Clock = (() => {
     cloudDensity = d;
     const count = d <= 0 ? 0 : Math.round(Math.pow(d / 100, CLOUD_EXP) * MAX_CLOUDS);
     const vw = window.innerWidth || 1080;
-    const span = vw + CLOUD_MARGIN;     // wrap distance (entry-to-entry)
+    const sc = cloudScale();            // size clouds relative to the screen width
+    const margin = cloudMargin();
+    const span = vw + margin;           // wrap distance (entry-to-entry)
     el.clouds.innerHTML = '';
     cloudObjs = [];
+    lastBuiltWidth = vw;
     for (let i = 0; i < count; i++) {
       const s = CLOUD_SPECS[i];
       const c = document.createElement('div');
@@ -177,13 +189,13 @@ const Clock = (() => {
       if (!skyCloudBgs[i]) skyCloudBgs[i] = randomCloudBackground();
       c.style.background = skyCloudBgs[i];
       c.style.top = s.top + '%';
-      c.style.width = s.w + 'px';
-      c.style.height = s.h + 'px';
+      c.style.width = (s.w * sc).toFixed(1) + 'px';
+      c.style.height = (s.h * sc).toFixed(1) + 'px';
       c.style.opacity = s.op;
       // Phase the clouds evenly across one cycle so they're always spaced a
       // constant time apart — at higher density they enter the left sooner
       // (interval = CLOUD_PERIOD / count).
-      const x = (i / Math.max(1, count)) * span - CLOUD_MARGIN;
+      const x = (i / Math.max(1, count)) * span - margin;
       c.style.transform = `translateX(${x}px)`;
       el.clouds.appendChild(c);
       cloudObjs.push({ el: c, x });
@@ -195,7 +207,7 @@ const Clock = (() => {
   function driftCloudArray(arr, dtMs) {
     if (!arr.length) return;
     const vw = window.innerWidth || 1080;
-    const span = vw + CLOUD_MARGIN;
+    const span = vw + cloudMargin();
     const dx = (span / CLOUD_PERIOD) * (dtMs / 1000);
     for (const c of arr) {
       c.x += dx;
@@ -220,7 +232,7 @@ const Clock = (() => {
     if (!el.screensaver || ssClouds.length >= ssMax) return;
     const vw = window.innerWidth || 1080;
     const vh = window.innerHeight || 1920;
-    const w = ssRand(170, 805);   // smallest unchanged; biggest +75% (was 460)
+    const w = ssRand(170, 805) * cloudScale();   // scaled to the screen (proportional on any device)
     const h = Math.round(w * 0.36);
     const c = document.createElement('div');
     c.className = 'cloud';
@@ -621,6 +633,11 @@ const Clock = (() => {
   function fit() {
     const scale = Math.min(window.innerWidth / 1080, window.innerHeight / 1920);
     el.stage.style.transform = `scale(${scale})`;
+    // Re-size the sky clouds when the viewport width changes (e.g. a phone
+    // rotating) so they stay proportional. Only rebuild on an actual width
+    // change to avoid reshuffling them during height-only changes.
+    const vw = window.innerWidth || 1080;
+    if (vw !== lastBuiltWidth) buildClouds(cloudDensity);
   }
 
   /* ---------- Public API ---------- */
