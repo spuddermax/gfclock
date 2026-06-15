@@ -144,8 +144,9 @@ body[data-theme="auto"] #sky { display: block; }
    Gradient radii are percentages so the puffiness scales with cloud size. */
 .cloud {
   position: absolute;
-  /* Gooey filter merges the lobes into one smooth shape with rounded edges. */
-  filter: url(#cloud-goo);
+  /* Gooey filter merges the lobes into one smooth shape; the slight blur softens
+     the edges (matching the screensaver clouds). */
+  filter: url(#cloud-goo) blur(1px);
   will-change: transform;
   /* Position (translateX) is driven by JS so clouds wrap promptly and stay
      evenly spaced by density — see moveClouds() in clock.js. */
