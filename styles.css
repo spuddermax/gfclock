@@ -835,9 +835,48 @@ body[data-theme="auto"] #viewport { background: transparent; }
 /* ===========================================================
    SETTINGS DRAWER
    =========================================================== */
+/* ---------- Tooltips ---------- */
+/* Clean dark bubble shown above any element carrying a data-tip attribute
+   (the winding arbors and the settings gear). Replaces the browser's native
+   title tooltip. The host element is already positioned, so the ::before is
+   placed relative to it. */
+[data-tip]::before {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(3px);
+  white-space: nowrap;
+  padding: 6px 10px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.2px;
+  color: #f3f4f7;
+  background: rgba(24,26,32,0.94);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10000;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+[data-tip]:hover::before,
+[data-tip]:focus-visible::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+/* While hovered, lift the winder (and its tooltip) above the hands/numerals so
+   the bubble reads clearly; normally the hands still sweep over the arbors. */
+.winder:hover { z-index: 60; }
+
 .gear-btn {
   position: fixed;
-  top: 18px; right: 18px;
+  bottom: 18px; right: 18px;
   z-index: 20;
   width: 54px; height: 54px;
   border-radius: 50%;
@@ -847,9 +886,16 @@ body[data-theme="auto"] #viewport { background: transparent; }
   font-size: 28px;
   cursor: pointer;
   backdrop-filter: blur(4px);
-  transition: transform 0.3s, background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
 }
-.gear-btn:hover { background: rgba(40,40,40,0.8); transform: rotate(45deg); }
+/* Glyph lives in ::after so only it spins on hover — the tooltip (::before)
+   stays put instead of rotating with the whole button. */
+.gear-btn::after { content: "⚙"; display: block; transition: transform 0.3s; }
+.gear-btn:hover { background: rgba(40,40,40,0.8); }
+.gear-btn:hover::after { transform: rotate(45deg); }
 
 .drawer {
   position: fixed;
