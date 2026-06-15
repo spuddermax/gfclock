@@ -168,7 +168,7 @@ body[data-theme="auto"] #sky { display: block; }
 #screensaver.on { opacity: 1; }
 /* No backdrop tint — just clouds on top. A soft shadow keeps the white clouds
    readable on any theme (a per-cloud effect, not a full-screen mist). */
-#screensaver .cloud { filter: url(#cloud-goo) drop-shadow(0 4px 7px rgba(55,65,85,0.22)); }
+#screensaver .cloud { filter: url(#cloud-goo) blur(2px) drop-shadow(0 4px 7px rgba(55,65,85,0.22)); }
 
 /* A single purple firefly (from purplefirefly-pump) drifts above the clouds.
    Position/rotation/opacity are driven per-frame by JS — see Firefly in clock.js. */
