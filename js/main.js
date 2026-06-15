@@ -22,6 +22,8 @@
     screensaverMin: 5,    // idle minutes before the cloud screensaver (0 = off)
     screensaverClouds: 40, // max simultaneous screensaver clouds
     screensaverFirefly: true, // show the purple firefly over the screensaver clouds
+    shootingCount: 1,    // meteors per burst in the night sky (0 = off)
+    shootingFreq: 9,     // average seconds between shooting-star bursts
     speed: 1,
   };
 
@@ -39,6 +41,8 @@
   if (params.has('screensaver')) settings.screensaverMin = Number(params.get('screensaver'));
   if (params.has('ssclouds')) settings.screensaverClouds = Number(params.get('ssclouds'));
   if (params.has('ssfirefly')) settings.screensaverFirefly = params.get('ssfirefly') !== '0';
+  if (params.has('shootcount')) settings.shootingCount = Number(params.get('shootcount'));
+  if (params.has('shootfreq')) settings.shootingFreq = Number(params.get('shootfreq'));
 
   function load() {
     try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }
@@ -309,6 +313,10 @@
     el.ssCloudRange = document.getElementById('ssCloudRange');
     el.ssCloudReadout = document.getElementById('ssCloudReadout');
     el.ssFireflyChk = document.getElementById('ssFireflyChk');
+    el.shootCountRange = document.getElementById('shootCountRange');
+    el.shootCountReadout = document.getElementById('shootCountReadout');
+    el.shootFreqRange = document.getElementById('shootFreqRange');
+    el.shootFreqReadout = document.getElementById('shootFreqReadout');
     el.testChime = document.getElementById('testChime');
     el.setTime = document.getElementById('setTime');
     el.applyTime = document.getElementById('applyTime');
@@ -371,6 +379,19 @@
     settings.screensaverFirefly = !!on;
     Clock.setFirefly(settings.screensaverFirefly);
     if (el.ssFireflyChk) el.ssFireflyChk.checked = settings.screensaverFirefly;
+    save();
+  }
+
+  function applyShootingStars() {
+    const count = Math.max(0, Math.min(5, Math.round(Number(settings.shootingCount) || 0)));
+    const freq = Math.max(2, Math.min(60, Math.round(Number(settings.shootingFreq) || 9)));
+    settings.shootingCount = count;
+    settings.shootingFreq = freq;
+    Clock.setShootingStars(freq, count);
+    if (el.shootCountRange) el.shootCountRange.value = count;
+    if (el.shootCountReadout) el.shootCountReadout.textContent = count === 0 ? 'Off' : String(count);
+    if (el.shootFreqRange) el.shootFreqRange.value = freq;
+    if (el.shootFreqReadout) el.shootFreqReadout.textContent = freq + ' s';
     save();
   }
 
@@ -473,6 +494,8 @@
     el.ssRange.addEventListener('input', () => applyScreensaver(Number(el.ssRange.value)));
     el.ssCloudRange.addEventListener('input', () => applyScreensaverClouds(Number(el.ssCloudRange.value)));
     el.ssFireflyChk.addEventListener('change', () => applyScreensaverFirefly(el.ssFireflyChk.checked));
+    el.shootCountRange.addEventListener('input', () => { settings.shootingCount = Number(el.shootCountRange.value); applyShootingStars(); });
+    el.shootFreqRange.addEventListener('input', () => { settings.shootingFreq = Number(el.shootFreqRange.value); applyShootingStars(); });
 
     el.testChime.addEventListener('click', () => {
       ChimeAudio.unlock();
@@ -543,6 +566,7 @@
     applyScreensaver(settings.screensaverMin);
     applyScreensaverClouds(settings.screensaverClouds);
     applyScreensaverFirefly(settings.screensaverFirefly);
+    applyShootingStars();
 
     ChimeAudio.setVolume(settings.volume / 100);
     ChimeAudio.setTickVolume(settings.tickVolume / 100);

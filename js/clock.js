@@ -430,6 +430,61 @@ const Clock = (() => {
     }
   }
 
+  /* ---------- Shooting stars ----------
+     Occasional meteors streak across the night sky. They live inside #stars so
+     they inherit its opacity — only visible (and only spawned) when the auto
+     starfield is showing. Count + frequency are user-settable. */
+  let starsVisibility = 0;     // current #stars opacity, set in applyAutoTheme
+  let shootFreq = 9;           // avg seconds between shooting-star events (0 = off)
+  let shootCount = 1;          // up to this many streaks per event (0 = off)
+  let shootAccum = 0;          // seconds since the last event
+  let shootNext = 0;           // seconds until the next event
+  let liveShooting = 0;        // currently animating, capped for safety
+  const SHOOT_CAP = 12;
+
+  function scheduleNextShoot() {
+    shootAccum = 0;
+    shootNext = shootFreq * (0.5 + Math.random());   // jitter the interval ±50%
+  }
+
+  function spawnShootingStar() {
+    if (!el.stars || liveShooting >= SHOOT_CAP) return;
+    const vw = window.innerWidth || 1080;
+    const vh = window.innerHeight || 1920;
+    const tail = ssRand(90, 190);                    // streak length, px
+    const sx = ssRand(0.08, 0.85) * vw;              // start point in the upper sky
+    const sy = ssRand(0.04, 0.50) * vh;
+    const dir = Math.random() < 0.5 ? 1 : -1;        // veer left or right
+    const ang = (15 + Math.random() * 35) * Math.PI / 180;  // 15–50° below horizontal
+    const dist = ssRand(0.30, 0.60) * vw;            // travel distance
+    const tx = Math.cos(ang) * dist * dir;
+    const ty = Math.sin(ang) * dist;
+    const d = document.createElement('div');
+    d.className = 'shooting-star';
+    d.style.width = Math.round(tail) + 'px';
+    d.style.left = Math.round(sx - tail) + 'px';     // head (right end) sits at sx
+    d.style.top = Math.round(sy) + 'px';
+    d.style.setProperty('--tx', Math.round(tx) + 'px');
+    d.style.setProperty('--ty', Math.round(ty) + 'px');
+    d.style.setProperty('--rot', (Math.atan2(ty, tx) * 180 / Math.PI).toFixed(1) + 'deg');
+    d.style.animation = `shoot ${ssRand(0.6, 1.25).toFixed(2)}s linear forwards`;
+    d.addEventListener('animationend', () => { d.remove(); liveShooting--; });
+    el.stars.appendChild(d);
+    liveShooting++;
+  }
+
+  function tickShootingStars(dtMs) {
+    // Only while the night starfield is actually visible.
+    if (document.body.dataset.theme !== 'auto' || starsVisibility < 0.15) return;
+    if (!(shootFreq > 0) || shootCount < 1) return;
+    shootAccum += dtMs / 1000;
+    if (shootAccum >= shootNext) {
+      const n = 1 + Math.floor(Math.random() * shootCount);  // 1..count streaks
+      for (let i = 0; i < n; i++) spawnShootingStar();
+      scheduleNextShoot();
+    }
+  }
+
   /* ---------- Moon phase ---------- */
   let moonOverride = null;  // testing: pin the phase (0..1) via Clock.setMoonPhase
   function updateMoon(date) {
@@ -508,6 +563,7 @@ const Clock = (() => {
     // gone once it's bright enough (ambient ~0.85).
     const stars = Math.max(0, Math.min(1, (0.85 - ambient) / (0.85 - 0.6)));
     el.stars.style.opacity = stars.toFixed(3);
+    starsVisibility = stars;   // gates shooting-star spawning
     // Clouds (and the overcast haze) fade in with daylight (opposite of the
     // stars) and the mountains dim toward night so the scene tracks the time.
     const dayFactor = Math.max(0, Math.min(1, (ambient - 0.6) / (1.05 - 0.6)));
@@ -548,6 +604,7 @@ const Clock = (() => {
     updateMoon(date);
     if (document.body.dataset.theme === 'auto') { applyAutoTheme(date); moveClouds(dt); }
     tickScreensaver(dt); // screensaver clouds (any theme)
+    tickShootingStars(dt); // night-sky meteors (auto theme, when stars show)
 
     // Pass both simulated and real elapsed ms so consumers can advance
     // time-based state (weights) and real-time animations (winding).
@@ -579,6 +636,13 @@ const Clock = (() => {
   function showSeconds(show) { el.subSeconds.style.display = show ? '' : 'none'; }
   function setCloudDensity(pct) { buildClouds(pct); }
   function setScreensaverClouds(n) { if (Number(n) > 0) ssMax = Math.round(Number(n)); }
+  /* Configure shooting stars: avg seconds between events (0 = off) and how many
+     streaks can appear per event (0 = off). */
+  function setShootingStars(freq, count) {
+    shootFreq = Math.max(0, Number(freq) || 0);
+    shootCount = Math.max(0, Math.round(Number(count) || 0));
+    scheduleNextShoot();
+  }
   /* Toggle the screensaver firefly. Applies live if the screensaver is showing. */
   function setFirefly(on) {
     fireflyEnabled = !!on;
@@ -587,5 +651,5 @@ const Clock = (() => {
     else if (!fireflyEnabled && firefly) { firefly.el.remove(); firefly = null; }
   }
 
-  return { init, setSpeed, getSpeed, setTime, getTime, setMoonPhase, setOnTick, showSeconds, setCloudDensity, setScreensaver, setScreensaverClouds, setFirefly };
+  return { init, setSpeed, getSpeed, setTime, getTime, setMoonPhase, setOnTick, showSeconds, setCloudDensity, setScreensaver, setScreensaverClouds, setFirefly, setShootingStars };
 })();

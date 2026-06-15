@@ -92,6 +92,27 @@ body[data-theme="auto"] #sky { display: block; }
   50%      { opacity: 1; }
 }
 
+/* Shooting stars: a bright head with a tapering tail, streaking across the
+   night sky. Position/angle/length/distance are set inline per meteor (JS);
+   they live inside #stars so they fade in/out with the starfield. */
+.shooting-star {
+  position: absolute;
+  height: 2px;
+  border-radius: 2px;
+  /* Tail fades in from nothing (left) to a bright head (right end). */
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.85) 85%, #fff 100%);
+  filter: drop-shadow(0 0 6px rgba(255,255,255,0.85));
+  transform-origin: 100% 50%;   /* rotate/translate about the head */
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+@keyframes shoot {
+  0%   { transform: translate(0, 0) rotate(var(--rot)); opacity: 0; }
+  12%  { opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)); opacity: 0; }
+}
+
 /* ---------- Overcast haze (auto theme) ---------- */
 #overcast {
   position: absolute;
@@ -404,7 +425,7 @@ body[data-theme="auto"] #viewport { background: transparent; }
 /* Maker name + subtitle, stacked just above the date window */
 .maker {
   position: absolute;
-  bottom: 170px; left: 0; right: 0;
+  bottom: 180px; left: 0; right: 0;
   text-align: center;
   font-size: 26px;
   font-style: italic;
@@ -412,7 +433,7 @@ body[data-theme="auto"] #viewport { background: transparent; }
 }
 .maker-sub {
   position: absolute;
-  bottom: 150px; left: 0; right: 0;
+  bottom: 160px; left: 0; right: 0;
   text-align: center;
   font-size: 13px;
   letter-spacing: 2px;
@@ -497,7 +518,7 @@ body[data-theme="auto"] #viewport { background: transparent; }
 /* Date window near the 6 o'clock position */
 .date-window {
   position: absolute;
-  bottom: 110px; left: 50%;
+  bottom: 123px; left: 50%;
   transform: translateX(-50%);
   min-width: 120px;
   text-align: center;
