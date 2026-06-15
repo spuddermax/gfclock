@@ -105,16 +105,19 @@
   // The pendulum is the escapement: the clock keeps time only while it's swinging.
   // The time weight merely provides the *drive* that sustains the swing. So a
   // wound weight does NOT restart a stopped clock — you must push the pendulum
-  // (drag it aside and release). `amp` (0..1) is the swing amplitude and also
-  // scales the clock's rate, so it speeds up / coasts down smoothly.
-  const going = { running: true, amp: 1, dragging: false, dragDeg: 0 };
-  const RUNDOWN_MS = 120000;         // amp 1->0 while running with no drive (~2 min coast to stop)
-  const STARTUP_MS = 2500;           // amp builds to full this fast once swinging with drive
-  const SETTLE_MS = 1400;            // amp ->0 this fast once stopped (pendulum settles to rest)
-  const SWING_DEG = 7;               // full-amplitude swing angle (matches the CSS keyframe)
+  // (drag it aside and release). `swingDeg` is the current swing amplitude in
+  // degrees; the clock's rate tracks it (relative to the natural amplitude) so
+  // the clock coasts down and back up smoothly.
+  const SWING_DEG = 7;               // natural full-amplitude swing angle (matches the CSS keyframe)
+  const going = { running: true, swingDeg: SWING_DEG, dragging: false, dragDeg: 0, beatSide: 0 };
+  const RUNDOWN_MS = 120000;         // swing 7°->0 while running with no drive (~2 min coast to stop)
+  const EASE_MS = 6000;              // time constant easing the swing toward its natural amplitude
+  const SETTLE_MS = 1400;            // swing ->0 once stopped (pendulum settles to rest)
   const PUSH_START_DEG = 2.5;        // release beyond this angle starts it; within it stops it
-  const DRAG_MAX_DEG = 16;           // clamp how far the pendulum can be dragged
+  const BEAT_DEG = 4;                // hand-swinging past this (alternating sides) beats the escapement once
+  const DRAG_MAX_DEG = 18;           // clamp how far the pendulum can be dragged aside
   let pendPivot = null;              // {x,y} screen coords of the pendulum's pivot, set on grab
+  const beatSideOf = (deg) => (deg >= BEAT_DEG ? 1 : (deg <= -BEAT_DEG ? -1 : 0));
   // While winding, play the tick (ratchet) sound 4×/second.
   const WIND_TICK_MS = 250;
   let windTickAccum = 0;
@@ -185,17 +188,23 @@
     const hasDrive = weight.time.drop < 1;
     if (going.running) {
       if (hasDrive) {
-        going.amp = Math.min(1, going.amp + dtReal / STARTUP_MS);
+        // Ease the swing toward its natural amplitude — gliding down from a big
+        // pull, or up from a small nudge — rather than snapping to it.
+        going.swingDeg += (SWING_DEG - going.swingDeg) * (1 - Math.exp(-dtReal / EASE_MS));
       } else {
-        going.amp = Math.max(0, going.amp - dtReal / RUNDOWN_MS);
-        if (going.amp <= 0.015) { going.amp = 0; going.running = false; }
+        // No drive (weight bottomed): the swing coasts down to a stop over ~2 min.
+        going.swingDeg = Math.max(0, going.swingDeg - SWING_DEG * dtReal / RUNDOWN_MS);
+        if (going.swingDeg <= 0.1) { going.swingDeg = 0; going.running = false; }
       }
     } else {
-      going.amp = Math.max(0, going.amp - dtReal / SETTLE_MS);
+      // Stopped: the pendulum settles to rest (clock already halted below).
+      going.swingDeg = Math.max(0, going.swingDeg - SWING_DEG * dtReal / SETTLE_MS);
     }
-    Clock.setTimePower(going.amp);
+    // The escapement keeps time only while running; the rate tracks the swing
+    // (capped at full) so the clock slows as it coasts down.
+    Clock.setTimePower(going.running ? Math.min(1, going.swingDeg / SWING_DEG) : 0);
     if (el.pendulum) {
-      el.pendulum.style.setProperty('--swing', (SWING_DEG * going.amp).toFixed(2) + 'deg');
+      el.pendulum.style.setProperty('--swing', going.swingDeg.toFixed(2) + 'deg');
     }
   }
 
@@ -208,35 +217,35 @@
   }
   function pendDragMove(e) {
     if (!going.dragging) return;
-    going.dragDeg = pendDragAngle(e);
-    el.pendulum.style.transform = `rotate(${going.dragDeg.toFixed(2)}deg)`;
+    going.dragDeg = pendDragAngle(e);   // bob angle from vertical, + = right
+    // The pivot is above the bob, so a positive CSS rotation swings the bob
+    // LEFT — negate so the bob follows the cursor.
+    el.pendulum.style.transform = `rotate(${(-going.dragDeg).toFixed(2)}deg)`;
+    // Hand-beating the escapement: each swing past the beat angle, alternating
+    // sides, advances the clock one second — just as the real escapement steps
+    // once per swing of a seconds pendulum.
+    const side = beatSideOf(going.dragDeg);
+    if (side !== 0 && side !== going.beatSide) {
+      going.beatSide = side;
+      Clock.setTime(Clock.getTime() + 1000);  // onTick then ticks the second + any chime
+    }
   }
   function pendDragEnd() {
     if (!going.dragging) return;
     going.dragging = false;
     window.removeEventListener('pointermove', pendDragMove);
     el.pendulum.style.transform = '';     // hand control back to the swing animation
-    if (Math.abs(going.dragDeg) >= PUSH_START_DEG) {
-      // Push-start: begin the swing from the side it was let go on, at the
-      // released amplitude (it then builds up to a full swing). The ease-in-out
-      // keyframe rests at its extremes — 0% is the right extreme, 50% the left —
-      // so start mid-cycle (negative delay) when released to the left, otherwise
-      // it would snap to the opposite side.
-      going.running = true;
-      going.amp = Math.min(1, Math.abs(going.dragDeg) / SWING_DEG);
-      el.pendulum.style.setProperty('--swing', (SWING_DEG * going.amp).toFixed(2) + 'deg');
-      el.pendulum.style.animation = 'none';
-      void el.pendulum.offsetWidth;        // reflow so the animation restarts cleanly
-      el.pendulum.style.animation =
-        `swing 2s ease-in-out ${going.dragDeg < 0 ? '-1s' : '0s'} infinite`;
-    } else {
-      // Released near the bottom of the arc: bring the clock to a stop.
-      going.running = false;
-      going.amp = 0;
-      Clock.setTimePower(0);
-      el.pendulum.style.animation = '';
-      el.pendulum.style.setProperty('--swing', '0deg');
-    }
+    const phi = going.dragDeg;            // + = released to the right
+    going.swingDeg = Math.abs(phi);       // begin swinging at exactly the released amplitude
+    going.running = Math.abs(phi) >= PUSH_START_DEG; // enough = start; near the bottom = stop
+    if (!going.running) Clock.setTimePower(0);
+    // Start the swing from the released side. In the keyframe, 0% is the bob's
+    // LEFT extreme (rotate +--swing) and 50% its RIGHT extreme; so begin half a
+    // cycle in (negative delay) when released to the right, else it snaps across.
+    el.pendulum.style.setProperty('--swing', going.swingDeg.toFixed(2) + 'deg');
+    el.pendulum.style.animation = 'none';
+    void el.pendulum.offsetWidth;         // reflow so the animation restarts cleanly
+    el.pendulum.style.animation = `swing 2s ease-in-out ${phi > 0 ? '-1s' : '0s'} infinite`;
   }
   function pendDragStart(e) {
     e.preventDefault();
@@ -246,6 +255,7 @@
     el.pendulum.style.transform = 'rotate(0deg)';
     const r = el.pendulum.getBoundingClientRect();
     pendPivot = { x: r.left + r.width / 2, y: r.top };
+    going.beatSide = beatSideOf(pendDragAngle(e));  // grabbing aside shouldn't beat
     pendDragMove(e);
     window.addEventListener('pointermove', pendDragMove);
     window.addEventListener('pointerup', pendDragEnd, { once: true });
@@ -306,7 +316,7 @@
   function jumpTo(ms) {
     if (weight.time.drop >= 1) weight.time.drop = 0; // give it drive
     going.running = true;                            // set the escapement going
-    going.amp = 1;
+    going.swingDeg = SWING_DEG;
     Clock.setTimePower(1);
     Clock.setTime(ms);
     lastQuarterKey = null; // re-arm so the next quarter chimes
