@@ -24,6 +24,7 @@
     screensaverFirefly: true, // show the purple firefly over the screensaver clouds
     shootingCount: 1,    // meteors per burst in the night sky (0 = off)
     shootingFreq: 9,     // average seconds between shooting-star bursts
+    autoWind: false,     // auto-wind a weight back to the top when it bottoms out
     speed: 1,
   };
 
@@ -43,6 +44,7 @@
   if (params.has('ssfirefly')) settings.screensaverFirefly = params.get('ssfirefly') !== '0';
   if (params.has('shootcount')) settings.shootingCount = Number(params.get('shootcount'));
   if (params.has('shootfreq')) settings.shootingFreq = Number(params.get('shootfreq'));
+  if (params.has('autowind')) settings.autoWind = params.get('autowind') !== '0';
 
   function load() {
     try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }
@@ -98,6 +100,21 @@
     strike: { el: null, drop: 0.40, winding: false, descendLeft: 0, descendRate: 0 },
     chime:  { el: null, drop: 0.60, winding: false, descendLeft: 0, descendRate: 0 },
   };
+
+  // ---- Going train / pendulum ----
+  // The pendulum is the escapement: the clock keeps time only while it's swinging.
+  // The time weight merely provides the *drive* that sustains the swing. So a
+  // wound weight does NOT restart a stopped clock — you must push the pendulum
+  // (drag it aside and release). `amp` (0..1) is the swing amplitude and also
+  // scales the clock's rate, so it speeds up / coasts down smoothly.
+  const going = { running: true, amp: 1, dragging: false, dragDeg: 0 };
+  const RUNDOWN_MS = 120000;         // amp 1->0 while running with no drive (~2 min coast to stop)
+  const STARTUP_MS = 2500;           // amp builds to full this fast once swinging with drive
+  const SETTLE_MS = 1400;            // amp ->0 this fast once stopped (pendulum settles to rest)
+  const SWING_DEG = 7;               // full-amplitude swing angle (matches the CSS keyframe)
+  const PUSH_START_DEG = 2.5;        // release beyond this angle starts it; within it stops it
+  const DRAG_MAX_DEG = 16;           // clamp how far the pendulum can be dragged
+  let pendPivot = null;              // {x,y} screen coords of the pendulum's pivot, set on grab
   // While winding, play the tick (ratchet) sound 4×/second.
   const WIND_TICK_MS = 250;
   let windTickAccum = 0;
@@ -155,6 +172,86 @@
     if (weight[which]) weight[which].winding = on;
   }
 
+  /* Advance the escapement each frame. The pendulum sustains its swing only
+     while it's running AND the time weight still has drive (drop < 1):
+       - running + drive   -> amplitude builds to full, clock keeps time
+       - running + no drive -> amplitude coasts to zero over ~2 min, then stops
+       - not running        -> amplitude settles to zero (clock stopped)
+     The amplitude doubles as the clock's rate, so timekeeping (hands, seconds)
+     speeds up and winds down with the swing. While the pendulum is being
+     dragged, the escapement is disengaged and the clock is paused. */
+  function updateGoing(dtReal) {
+    if (going.dragging) { Clock.setTimePower(0); return; } // held by the user
+    const hasDrive = weight.time.drop < 1;
+    if (going.running) {
+      if (hasDrive) {
+        going.amp = Math.min(1, going.amp + dtReal / STARTUP_MS);
+      } else {
+        going.amp = Math.max(0, going.amp - dtReal / RUNDOWN_MS);
+        if (going.amp <= 0.015) { going.amp = 0; going.running = false; }
+      }
+    } else {
+      going.amp = Math.max(0, going.amp - dtReal / SETTLE_MS);
+    }
+    Clock.setTimePower(going.amp);
+    if (el.pendulum) {
+      el.pendulum.style.setProperty('--swing', (SWING_DEG * going.amp).toFixed(2) + 'deg');
+    }
+  }
+
+  /* ---- Dragging the pendulum: push it to start, bring it to rest to stop ---- */
+  function pendDragAngle(e) {
+    const dx = e.clientX - pendPivot.x;
+    const dy = Math.max(1, e.clientY - pendPivot.y);   // pivot is above the bob
+    const deg = Math.atan2(dx, dy) * 180 / Math.PI;     // 0 = hanging straight down
+    return Math.max(-DRAG_MAX_DEG, Math.min(DRAG_MAX_DEG, deg));
+  }
+  function pendDragMove(e) {
+    if (!going.dragging) return;
+    going.dragDeg = pendDragAngle(e);
+    el.pendulum.style.transform = `rotate(${going.dragDeg.toFixed(2)}deg)`;
+  }
+  function pendDragEnd() {
+    if (!going.dragging) return;
+    going.dragging = false;
+    window.removeEventListener('pointermove', pendDragMove);
+    el.pendulum.style.transform = '';     // hand control back to the swing animation
+    if (Math.abs(going.dragDeg) >= PUSH_START_DEG) {
+      // Push-start: begin the swing from the side it was let go on, at the
+      // released amplitude (it then builds up to a full swing). The ease-in-out
+      // keyframe rests at its extremes — 0% is the right extreme, 50% the left —
+      // so start mid-cycle (negative delay) when released to the left, otherwise
+      // it would snap to the opposite side.
+      going.running = true;
+      going.amp = Math.min(1, Math.abs(going.dragDeg) / SWING_DEG);
+      el.pendulum.style.setProperty('--swing', (SWING_DEG * going.amp).toFixed(2) + 'deg');
+      el.pendulum.style.animation = 'none';
+      void el.pendulum.offsetWidth;        // reflow so the animation restarts cleanly
+      el.pendulum.style.animation =
+        `swing 2s ease-in-out ${going.dragDeg < 0 ? '-1s' : '0s'} infinite`;
+    } else {
+      // Released near the bottom of the arc: bring the clock to a stop.
+      going.running = false;
+      going.amp = 0;
+      Clock.setTimePower(0);
+      el.pendulum.style.animation = '';
+      el.pendulum.style.setProperty('--swing', '0deg');
+    }
+  }
+  function pendDragStart(e) {
+    e.preventDefault();
+    going.dragging = true;
+    // Measure the pivot (transform-origin: top centre) with the element upright.
+    el.pendulum.style.animation = 'none';
+    el.pendulum.style.transform = 'rotate(0deg)';
+    const r = el.pendulum.getBoundingClientRect();
+    pendPivot = { x: r.left + r.width / 2, y: r.top };
+    pendDragMove(e);
+    window.addEventListener('pointermove', pendDragMove);
+    window.addEventListener('pointerup', pendDragEnd, { once: true });
+    window.addEventListener('pointercancel', pendDragEnd, { once: true });
+  }
+
   function updateWeights(dtSim, dtReal) {
     // The going (time) train always runs (unless we're actively winding it).
     if (!weight.time.winding) {
@@ -169,6 +266,14 @@
       w.drop = Math.min(1, w.drop + step);
       w.descendLeft -= step;
     }
+    // Auto-wind: a weight that has run all the way down winds itself back up.
+    if (settings.autoWind) {
+      for (const k in weight) {
+        if (weight[k].drop >= 1 && !weight[k].winding) weight[k].winding = true;
+      }
+    }
+    // Advance the pendulum/escapement (sets the clock's rate + swing amplitude).
+    updateGoing(dtReal);
     // Winding pulls a weight back up to the top at a steady real-time rate.
     let anyWinding = false;
     for (const k in weight) {
@@ -192,6 +297,20 @@
     } else {
       windTickAccum = 0;
     }
+  }
+
+  /* Jump the clock to an absolute time (ms). Setting the time also gets the
+     going train running again: restore full power and, if the time weight had
+     run all the way down (which freezes the clock), wind it back to the top —
+     otherwise the clock would just sit frozen at the new time. */
+  function jumpTo(ms) {
+    if (weight.time.drop >= 1) weight.time.drop = 0; // give it drive
+    going.running = true;                            // set the escapement going
+    going.amp = 1;
+    Clock.setTimePower(1);
+    Clock.setTime(ms);
+    lastQuarterKey = null; // re-arm so the next quarter chimes
+    lastTickSec = null;    // re-arm the per-second tick at the new time
   }
 
   /* Returns true if the simulated time falls in the night-silence window. */
@@ -251,15 +370,21 @@
   function fireChime(date, quarter, speed) {
     if (settings.chime === 'silent') return;
 
+    // A train only works while its weight still has drop left; once it bottoms
+    // out (and isn't auto-wound) it goes dead — no sound, no further descent.
+    const chimeOk = weight.chime.drop < 1;
+    const strikeOk = weight.strike.drop < 1;
+    const willStrike = quarter === 0 && strikeOk;
+
     // The chime/strike train trips every quarter/hour and its weight descends
     // *while that train runs* (whether or not the sound is audible). The amount
     // is proportional to the work: chime phrases, then the gong count at :00.
     const phrases = quarter === 0 ? 4 : quarter; // 1,2,3,4 phrases
     const chimeDur = ChimeAudio.chimeDuration(settings.chime, quarter);
-    scheduleDescent('chime', phrases * UNIT_CHIME, chimeDur);
+    if (chimeOk) scheduleDescent('chime', phrases * UNIT_CHIME, chimeDur);
 
     let strikeCount = 0;
-    if (quarter === 0) {
+    if (willStrike) {
       strikeCount = (date.getHours() % 12) || 12;
       const strikeDur = strikeCount * settings.strikeGap; // gong spacing (s)
       // The strike train runs after the chime finishes, so its weight descends then.
@@ -270,14 +395,15 @@
     const silenced = isNightSilenced(date);
     const audible = !silenced && !settings.muted && speed <= AUDIO_SPEED_LIMIT;
 
-    // Visual flash always (even when silenced) so fast-forward shows activity.
-    flashDial();
+    // Visual flash when a train actually runs (even when silenced) so
+    // fast-forward shows activity — but not when both trains are dead.
+    if (chimeOk || willStrike) flashDial();
 
     if (!audible) return;
 
-    ChimeAudio.playChime(settings.chime, quarter);
+    if (chimeOk) ChimeAudio.playChime(settings.chime, quarter);
 
-    if (quarter === 0) {
+    if (willStrike) {
       // Top of hour: play the phrases, then strike the hour after they finish.
       setTimeout(() => {
         if (!settings.muted) ChimeAudio.playStrike(strikeCount, settings.chime);
@@ -291,6 +417,8 @@
     el.gearBtn = document.getElementById('gearBtn');
     el.drawer = document.getElementById('drawer');
     el.closeDrawer = document.getElementById('closeDrawer');
+    el.pendulum = document.getElementById('pendulum');
+    el.autoWindChk = document.getElementById('autoWindChk');
     el.themeSeg = document.getElementById('themeSeg');
     el.cloudRange = document.getElementById('cloudRange');
     el.cloudReadout = document.getElementById('cloudReadout');
@@ -467,6 +595,10 @@
       settings.nightSilence = el.nightChk.checked;
       save();
     });
+    el.autoWindChk.addEventListener('change', () => {
+      settings.autoWind = el.autoWindChk.checked;
+      save();
+    });
     el.tickChk.addEventListener('change', () => {
       settings.tick = el.tickChk.checked;
       if (settings.tick) ChimeAudio.unlock();
@@ -513,18 +645,19 @@
     });
 
     el.applyTime.addEventListener('click', () => {
-      const v = el.setTime.value;
+      const v = el.setTime.value;        // "HH:MM" or, with step=1, "HH:MM:SS"
       if (!v) return;
-      const [hh, mm] = v.split(':').map(Number);
+      const [hh, mm, ss] = v.split(':').map(Number);
+      if (Number.isNaN(hh) || Number.isNaN(mm)) return;  // guard against an invalid date
       const d = new Date(Clock.getTime());
-      d.setHours(hh, mm, 0, 0);
-      Clock.setTime(d.getTime());
-      lastQuarterKey = null; // re-arm so the next quarter chimes
+      d.setHours(hh, mm, ss || 0, 0);     // include seconds when present
+      jumpTo(d.getTime());
     });
-    el.resetTime.addEventListener('click', () => {
-      Clock.setTime(Date.now());
-      lastQuarterKey = null;
-    });
+    el.resetTime.addEventListener('click', () => jumpTo(Date.now()));
+
+    // Grab the pendulum to push-start it (drag aside + release) or stop it
+    // (bring it to rest near the bottom of the arc).
+    if (el.pendulum) el.pendulum.addEventListener('pointerdown', pendDragStart);
 
     // Winding arbors on the dial — wind the matching weight up only while the
     // key is held down; releasing (or leaving) stops the winding.
@@ -560,6 +693,7 @@
     el.muteChk.checked = settings.muted;
     el.volRange.value = settings.volume;
     el.nightChk.checked = settings.nightSilence;
+    el.autoWindChk.checked = settings.autoWind;
     el.tickChk.checked = settings.tick;
     el.tickVolRange.value = settings.tickVolume;
     el.secondsChk.checked = settings.showSeconds;
@@ -584,9 +718,9 @@
     initWeights();
 
     if (params.has('time')) {
-      const [hh, mm] = params.get('time').split(':').map(Number);
+      const [hh, mm, ss] = params.get('time').split(':').map(Number);
       const d = new Date(Clock.getTime());
-      d.setHours(hh || 0, mm || 0, 0, 0);
+      d.setHours(hh || 0, mm || 0, ss || 0, 0);
       Clock.setTime(d.getTime());
     }
     if (params.has('moon')) Clock.setMoonPhase(Number(params.get('moon')));

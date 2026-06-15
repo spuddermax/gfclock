@@ -274,6 +274,10 @@
           <input type="checkbox" id="secondsChk" checked />
         </label>
         <label class="row">
+          <span>Auto-wind weights<br /><small>rewind a weight when it reaches the bottom</small></span>
+          <input type="checkbox" id="autoWindChk" />
+        </label>
+        <label class="row">
           <span>Screensaver after<br /><small>idle clouds cover the screen; 0 = off</small></span>
           <input type="range" id="ssRange" min="0" max="30" step="1" value="5" />
           <span class="slider-val" id="ssReadout">5 min</span>
@@ -300,7 +304,7 @@
         <p class="hint">Chimes auto-mute above 4× to avoid overlap (the bell still flashes).</p>
         <div class="row">
           <label for="setTime">Jump to time</label>
-          <input type="time" id="setTime" />
+          <input type="time" id="setTime" step="1" />
           <button id="applyTime" class="action-btn small">Set</button>
         </div>
         <button id="resetTime" class="action-btn">Reset to now</button>

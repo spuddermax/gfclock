@@ -769,8 +769,12 @@ body[data-theme="auto"] #viewport { background: transparent; }
   width: 156px;
   transform-origin: top center;
   z-index: 2;
+  --swing: 7deg;        /* JS lowers this toward 0 as the time weight runs down */
   animation: swing 2s ease-in-out infinite;
+  cursor: grab;         /* drag it aside to start the clock, to rest to stop it */
+  touch-action: none;   /* let pointer-drag work on touch without scrolling */
 }
+.pendulum:active { cursor: grabbing; }
 .pendulum-rod {
   width: 7px;
   height: 626px;        /* from the dial centre down into the trunk */
@@ -786,9 +790,9 @@ body[data-theme="auto"] #viewport { background: transparent; }
   border: 4px solid var(--brass-dark);
 }
 @keyframes swing {
-  0%   { transform: rotate(7deg); }
-  50%  { transform: rotate(-7deg); }
-  100% { transform: rotate(7deg); }
+  0%   { transform: rotate(var(--swing)); }
+  50%  { transform: rotate(calc(var(--swing) * -1)); }
+  100% { transform: rotate(var(--swing)); }
 }
 
 /* ===========================================================

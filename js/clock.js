@@ -8,6 +8,7 @@ const Clock = (() => {
   // --- Simulated time state ---
   let simNow = Date.now();   // ms, the clock's current (possibly accelerated) time
   let speed = 1;             // time multiplier
+  let timePower = 1;         // going-train power 0..1 (drops as the time weight runs out)
   let lastFrame = null;
 
   // --- DOM refs ---
@@ -596,7 +597,11 @@ const Clock = (() => {
     const dt = ts - lastFrame;
     lastFrame = ts;
 
-    simNow += dt * speed;
+    // The going train's power scales how fast time actually advances: 1 = full,
+    // 0 = stopped. main.js lowers it as the time weight winds down (see
+    // setTimePower), so the hands and seconds slow to a halt rather than freezing.
+    const dtSim = dt * speed * timePower;
+    simNow += dtSim;
     const date = new Date(simNow);
 
     updateHands(date);
@@ -608,7 +613,7 @@ const Clock = (() => {
 
     // Pass both simulated and real elapsed ms so consumers can advance
     // time-based state (weights) and real-time animations (winding).
-    if (onTick) onTick(date, speed, dt * speed, dt);
+    if (onTick) onTick(date, speed, dtSim, dt);
     requestAnimationFrame(frame);
   }
 
@@ -629,6 +634,9 @@ const Clock = (() => {
   }
   function setSpeed(v) { speed = v; }
   function getSpeed() { return speed; }
+  /* Going-train power (0..1): scales how fast time advances so the clock can
+     wind down to a stop instead of freezing instantly. */
+  function setTimePower(p) { timePower = Math.max(0, Math.min(1, Number(p))); }
   function setTime(ms) { simNow = ms; }
   function getTime() { return simNow; }
   function setMoonPhase(p) { moonOverride = (p == null ? null : ((p % 1) + 1) % 1); }
@@ -651,5 +659,5 @@ const Clock = (() => {
     else if (!fireflyEnabled && firefly) { firefly.el.remove(); firefly = null; }
   }
 
-  return { init, setSpeed, getSpeed, setTime, getTime, setMoonPhase, setOnTick, showSeconds, setCloudDensity, setScreensaver, setScreensaverClouds, setFirefly, setShootingStars };
+  return { init, setSpeed, getSpeed, setTimePower, setTime, getTime, setMoonPhase, setOnTick, showSeconds, setCloudDensity, setScreensaver, setScreensaverClouds, setFirefly, setShootingStars };
 })();
