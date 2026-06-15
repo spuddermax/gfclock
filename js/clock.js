@@ -498,6 +498,43 @@ const Clock = (() => {
     }
   }
 
+  /* ---------- Satellites ----------
+     Infrequent steady points of light that drift slowly left->right in a
+     straight line — like a star that doesn't twinkle. They live in #stars so
+     they share the night fade + horizon mask, and only spawn while the
+     starfield is showing. User-toggleable, with a settable frequency. */
+  let satOn = true;        // user toggle
+  let satFreq = 45;        // avg seconds between satellites
+  let satAccum = 0;        // seconds since the last satellite
+  let satNext = 0;         // seconds until the next one
+
+  function scheduleNextSat() {
+    satAccum = 0;
+    satNext = satFreq * (0.5 + Math.random());   // jitter the interval ±50%
+  }
+
+  function spawnSatellite() {
+    if (!el.stars) return;
+    const vw = window.innerWidth || 1080;
+    const sz = (1.5 + Math.random() * 1.2).toFixed(1);
+    const d = document.createElement('div');
+    d.className = 'satellite';
+    d.style.width = sz + 'px';
+    d.style.height = sz + 'px';
+    d.style.top = ssRand(8, 55).toFixed(1) + '%';        // upper sky (clearer of the horizon haze)
+    d.style.setProperty('--dx', (vw + 60) + 'px');       // travel: off-left -> off-right
+    d.style.animation = `satellite-cross ${ssRand(18, 40).toFixed(1)}s linear forwards`;
+    d.addEventListener('animationend', () => d.remove());
+    el.stars.appendChild(d);
+  }
+
+  function tickSatellites(dtMs) {
+    if (document.body.dataset.theme !== 'auto' || starsVisibility < 0.15) return;
+    if (!satOn || !(satFreq > 0)) return;
+    satAccum += dtMs / 1000;
+    if (satAccum >= satNext) { spawnSatellite(); scheduleNextSat(); }
+  }
+
   /* ---------- Moon phase ---------- */
   let moonOverride = null;  // testing: pin the phase (0..1) via Clock.setMoonPhase
   function updateMoon(date) {
@@ -622,6 +659,7 @@ const Clock = (() => {
     if (document.body.dataset.theme === 'auto') { applyAutoTheme(date); moveClouds(dt); }
     tickScreensaver(dt); // screensaver clouds (any theme)
     tickShootingStars(dt); // night-sky meteors (auto theme, when stars show)
+    tickSatellites(dt);    // slow satellites crossing the night sky
 
     // Pass both simulated and real elapsed ms so consumers can advance
     // time-based state (weights) and real-time animations (winding).
@@ -692,6 +730,12 @@ const Clock = (() => {
     shootCount = Math.max(0, Math.round(Number(count) || 0));
     scheduleNextShoot();
   }
+  /* Toggle satellites and set their average interval (seconds). */
+  function setSatellites(on, freq) {
+    satOn = !!on;
+    satFreq = Math.max(0, Number(freq) || 0);
+    scheduleNextSat();
+  }
   /* Toggle the screensaver firefly. Applies live if the screensaver is showing. */
   function setFirefly(on) {
     fireflyEnabled = !!on;
@@ -700,5 +744,5 @@ const Clock = (() => {
     else if (!fireflyEnabled && firefly) { firefly.el.remove(); firefly = null; }
   }
 
-  return { init, setSpeed, getSpeed, setTimePower, setTime, getTime, setMoonPhase, setOnTick, showSeconds, setCloudDensity, setScreensaver, setScreensaverClouds, setFirefly, setShootingStars };
+  return { init, setSpeed, getSpeed, setTimePower, setTime, getTime, setMoonPhase, setOnTick, showSeconds, setCloudDensity, setScreensaver, setScreensaverClouds, setFirefly, setShootingStars, setSatellites };
 })();

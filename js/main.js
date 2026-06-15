@@ -24,6 +24,8 @@
     screensaverFirefly: true, // show the purple firefly over the screensaver clouds
     shootingCount: 1,    // meteors per burst in the night sky (0 = off)
     shootingFreq: 9,     // average seconds between shooting-star bursts
+    satellites: true,    // slow satellites crossing the night sky
+    satelliteFreq: 45,   // average seconds between satellites
     autoWind: false,     // auto-wind a weight back to the top when it bottoms out
     speed: 1,
   };
@@ -45,6 +47,8 @@
   if (params.has('shootcount')) settings.shootingCount = Number(params.get('shootcount'));
   if (params.has('shootfreq')) settings.shootingFreq = Number(params.get('shootfreq'));
   if (params.has('autowind')) settings.autoWind = params.get('autowind') !== '0';
+  if (params.has('satellites')) settings.satellites = params.get('satellites') !== '0';
+  if (params.has('satfreq')) settings.satelliteFreq = Number(params.get('satfreq'));
 
   function load() {
     try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }
@@ -455,6 +459,9 @@
     el.shootCountReadout = document.getElementById('shootCountReadout');
     el.shootFreqRange = document.getElementById('shootFreqRange');
     el.shootFreqReadout = document.getElementById('shootFreqReadout');
+    el.satChk = document.getElementById('satChk');
+    el.satFreqRange = document.getElementById('satFreqRange');
+    el.satFreqReadout = document.getElementById('satFreqReadout');
     el.testChime = document.getElementById('testChime');
     el.setTime = document.getElementById('setTime');
     el.applyTime = document.getElementById('applyTime');
@@ -530,6 +537,18 @@
     if (el.shootCountReadout) el.shootCountReadout.textContent = count === 0 ? 'Off' : String(count);
     if (el.shootFreqRange) el.shootFreqRange.value = freq;
     if (el.shootFreqReadout) el.shootFreqReadout.textContent = freq + ' s';
+    save();
+  }
+
+  function applySatellites() {
+    const on = !!settings.satellites;
+    const freq = Math.max(5, Math.min(180, Math.round(Number(settings.satelliteFreq) || 45)));
+    settings.satellites = on;
+    settings.satelliteFreq = freq;
+    Clock.setSatellites(on, freq);
+    if (el.satChk) el.satChk.checked = on;
+    if (el.satFreqRange) el.satFreqRange.value = freq;
+    if (el.satFreqReadout) el.satFreqReadout.textContent = freq + ' s';
     save();
   }
 
@@ -638,6 +657,8 @@
     el.ssFireflyChk.addEventListener('change', () => applyScreensaverFirefly(el.ssFireflyChk.checked));
     el.shootCountRange.addEventListener('input', () => { settings.shootingCount = Number(el.shootCountRange.value); applyShootingStars(); });
     el.shootFreqRange.addEventListener('input', () => { settings.shootingFreq = Number(el.shootFreqRange.value); applyShootingStars(); });
+    el.satChk.addEventListener('change', () => { settings.satellites = el.satChk.checked; applySatellites(); });
+    el.satFreqRange.addEventListener('input', () => { settings.satelliteFreq = Number(el.satFreqRange.value); applySatellites(); });
 
     el.testChime.addEventListener('click', () => {
       ChimeAudio.unlock();
@@ -711,6 +732,7 @@
     applyScreensaverClouds(settings.screensaverClouds);
     applyScreensaverFirefly(settings.screensaverFirefly);
     applyShootingStars();
+    applySatellites();
 
     ChimeAudio.setVolume(settings.volume / 100);
     ChimeAudio.setTickVolume(settings.tickVolume / 100);
