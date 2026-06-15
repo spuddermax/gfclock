@@ -64,6 +64,10 @@ body[data-theme="auto"] #sky { display: block; }
   opacity: 0;
   transition: opacity 1.5s linear;
   pointer-events: none;
+  /* Atmospheric extinction: stars are fully clear high up and dim toward the
+     horizon (the bottom, where the sky thickens behind the mountains). */
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 40%, rgba(0,0,0,0.22) 80%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 40%, rgba(0,0,0,0.22) 80%, rgba(0,0,0,0) 100%);
 }
 .starfield {
   position: absolute;
@@ -79,17 +83,27 @@ body[data-theme="auto"] #sky { display: block; }
     radial-gradient(1.5px 1.5px at 20px 130px, rgba(255,255,255,0.85), transparent),
     radial-gradient(1.5px 1.5px at 140px 130px, rgba(255,255,255,0.8), transparent);
   filter: drop-shadow(0 0 2px rgba(255,255,255,0.5));
-  animation: twinkle 6s ease-in-out infinite;
 }
 .starfield-2 {
   background-size: 240px 240px;
   background-position: 70px 50px;
-  animation-duration: 9s;
-  animation-delay: 2s;
 }
-@keyframes twinkle {
-  0%, 100% { opacity: 0.7; }
-  50%      { opacity: 1; }
+
+/* A scattering of individual stars that twinkle on their own random cadence
+   (size / position / duration / phase set inline in clock.js), over the steady
+   tiled field above — a slight, natural shimmer rather than a global pulse. */
+.twinkle-star {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 3px rgba(255, 255, 255, 0.8);
+  opacity: var(--dim, 0.4);
+  animation: twinkleStar 5s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+@keyframes twinkleStar {
+  0%, 100% { opacity: var(--dim, 0.4); transform: scale(0.85); }
+  50%      { opacity: 1;               transform: scale(1); }
 }
 
 /* Shooting stars: a bright head with a tapering tail, streaking across the

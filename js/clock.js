@@ -640,11 +640,35 @@ const Clock = (() => {
     if (vw !== lastBuiltWidth) buildClouds(cloudDensity);
   }
 
+  /* Scatter individual twinkling stars across the sky, each on its own random
+     cadence/phase so the field shimmers slightly rather than pulsing in unison.
+     They live inside #stars, so they share its day/night fade and horizon mask. */
+  function buildTwinkles() {
+    if (!el.stars) return;
+    const N = 90;
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < N; i++) {
+      const s = document.createElement('div');
+      s.className = 'twinkle-star';
+      const size = (1 + Math.random() * 2).toFixed(1);     // 1–3px
+      s.style.width = size + 'px';
+      s.style.height = size + 'px';
+      s.style.left = (Math.random() * 100).toFixed(2) + '%';
+      s.style.top = (Math.random() * 100).toFixed(2) + '%';
+      s.style.animationDuration = (0.625 + Math.random() * 1.25).toFixed(2) + 's';  // 0.6–1.9s (75% faster)
+      s.style.animationDelay = (-Math.random() * 7).toFixed(2) + 's';          // out of phase
+      s.style.setProperty('--dim', (0.3 + Math.random() * 0.35).toFixed(2));   // varied low point
+      frag.appendChild(s);
+    }
+    el.stars.appendChild(frag);
+  }
+
   /* ---------- Public API ---------- */
   function init() {
     cache();
     buildDial();
     buildClouds(20); // default; main.js overrides from saved settings
+    buildTwinkles();
     fit();
     window.addEventListener('resize', fit);
     requestAnimationFrame(frame);
