@@ -74,6 +74,7 @@ const ChimeAudio = (() => {
     p2: ['E4', 'Fs4', 'Gs4', 'E4'],
     p3: ['Gs4', 'E4', 'Fs4', 'B3'],
     p4: ['B3', 'Fs4', 'Gs4', 'E4'],
+    p5: ['Gs4', 'Fs4', 'E4', 'B3'],
   };
   // Canonical Westminster Quarters (0=:00, 1=:15, 2=:30, 3=:45):
   //   :15 -> change 1
@@ -81,7 +82,7 @@ const ChimeAudio = (() => {
   //   :45 -> changes 4, 5, 1   (the 15-min phrase recurs at the end)
   //   :00 -> changes 2, 3, 4, 5  (then the hour strike)
   const WESTMINSTER = {
-    1: [WEST.p1],
+    1: [WEST.p5],
     2: [WEST.p1, WEST.p2],
     3: [WEST.p1, WEST.p2, WEST.p3],
     0: [WEST.p1, WEST.p2, WEST.p3, WEST.p4],
