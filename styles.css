@@ -361,9 +361,11 @@ body[data-theme="auto"] #viewport { background: transparent; }
   box-shadow: 0 0 22px 5px rgba(255,250,210,0.55), inset -7px -6px 12px rgba(120,110,70,0.45);
   /* The whole moon is scaled up (craters, maria, glow scale with it) so a
      crescent pokes out from behind the globes near new moon instead of being
-     swallowed by them. JS positions the 66px box by its centre, which the
+     swallowed by them. The disc is large (≈145px rendered) so that, paired
+     with the lowered apex in clock.js, the globes begin occluding it within
+     ~1 day of full. JS positions the 66px box by its centre, which the
      centred scale leaves unchanged. */
-  transform: scale(1.7);
+  transform: scale(2.2);
 }
 
 /* Two opposite earth globes flank the arch (the "lunar humps"). They sit

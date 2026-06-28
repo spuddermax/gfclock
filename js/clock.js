@@ -549,18 +549,25 @@ const Clock = (() => {
 
     // The moon transits the arch between the two earth globes. Position alone
     // encodes the phase, exactly like a real lunar dial: the globes occlude it
-    // at the horizons (crescents) and it's fully clear at the top (full moon).
+    // at the horizons (crescents) and it's clear of them around full moon.
     // It moves left while waxing and right while waning (so the visible side is
     // lit correctly: waxing crescent on the left shows its right edge).
     //   phase 0   (new)  -> hidden behind the LEFT globe, near the horizon
-    //   phase 0.5 (full) -> centered at the top of the arch
+    //   phase 0.5 (full) -> nestled low BETWEEN the globes, just clear of them
     //   phase 1   (new)  -> hidden behind the RIGHT globe, near the horizon
+    // The apex sits low (not at the very top) and the disc is large, so the
+    // right globe starts biting the disc within ~1 day of full -- i.e. full
+    // visibly gives way to a waning gibbous after one day rather than ~4 days.
     const ARCH_W = 360 - 16;  // inner width (minus the 8px brass border each side)
     const ARCH_H = 190 - 8;
     const MOON = 66;
     const cx = 30 + phase * (ARCH_W - 60);   // moon centre x (0 -> left, 1 -> right)
-    const arc = Math.sin(phase * Math.PI);   // 0 at horizons, 1 at top-centre
-    const cy = ARCH_H - 28 - arc * (ARCH_H - 90); // moon centre y (from top)
+    const arc = Math.sin(phase * Math.PI);   // 0 at horizons, 1 at the apex
+    // Full moon sits LOW between the globes (APEX_Y), close enough that they
+    // occlude it within a day of leaving full -- see the header note above.
+    const HORIZON_Y = ARCH_H - 28;           // 154: disc centre y at the horizons
+    const APEX_Y = 100;                      // disc centre y at full (phase 0.5)
+    const cy = HORIZON_Y - arc * (HORIZON_Y - APEX_Y);
     el.moonDisc.style.left = `${cx - MOON / 2}px`;
     el.moonDisc.style.top = `${cy - MOON / 2}px`;
   }
