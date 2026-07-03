@@ -38,6 +38,32 @@ chmod +x start.sh && ./start.sh
 
 It uses only Python 3's built-in `http.server` — no dependencies.
 
+### Public hosting (Cloudflare Tunnel)
+
+A live copy runs at **<https://clock.myavs.us>**, published from this machine
+through a [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/)
+(no open inbound ports). Two `systemd` services keep it up and start it on boot:
+
+| Service | Role |
+| --- | --- |
+| `gfclock.service` | runs `start.sh` (the Python static server on port **8473**) |
+| `cloudflared-clock.service` | runs the `clock` tunnel, mapping `clock.myavs.us` → `http://localhost:8473` |
+
+The tunnel ingress lives in `~/.cloudflared/config.yml`. Edits to the
+HTML/CSS/JS are served immediately (the server sends `Cache-Control: no-store`),
+so no restart or cache purge is needed after a content change.
+
+```bash
+# Follow logs
+sudo journalctl -u cloudflared-clock.service -f
+
+# Restart after changing start.sh or the port
+sudo systemctl restart gfclock.service
+
+# Stop / disable public hosting
+sudo systemctl disable --now cloudflared-clock.service gfclock.service
+```
+
 ## Controls
 
 Click the **⚙ gear** (top-right) to open the settings drawer:

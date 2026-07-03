@@ -7,7 +7,7 @@
   const STORE_KEY = 'gfclock.settings';
 
   const defaults = {
-    theme: 'light',
+    theme: 'auto',
     cloudDensity: 20, // percent; 20% == the four original clouds
     chime: 'westminster',
     muted: false,
