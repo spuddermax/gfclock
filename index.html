@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Grandfather Clock</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#14171c" />
+  <link rel="icon" href="assets/icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
 </head>
 <body data-theme="light">
   <!-- "Gooey" filter: blurs then re-thresholds the alpha so the cloud lobes
@@ -183,6 +187,7 @@
 
   <!-- ===================== SETTINGS ===================== -->
   <button id="gearBtn" class="gear-btn" data-tip="Settings" aria-label="Settings"></button>
+  <button id="beatBtn" class="gear-btn beat-btn" data-tip="Beat Timer" aria-label="Beat Timer"></button>
 
   <div id="drawer" class="drawer" aria-hidden="true">
     <div class="drawer-head">
@@ -329,8 +334,60 @@
     </div>
   </div>
 
+  <!-- ===================== BEAT TIMER ===================== -->
+  <!-- Full-screen tool: listens through the microphone to a REAL
+       pendulum clock (not the simulated one above) and measures how
+       many seconds/day it's running fast or slow, from detected
+       tick/tock timing. Independent of the dial/chime simulation. -->
+  <div id="beatView" class="beat-view" aria-hidden="true">
+    <div class="beat-head">
+      <h2>Beat Timer</h2>
+      <button id="closeBeatView" class="close-btn" aria-label="Close">×</button>
+    </div>
+
+    <div class="beat-body drawer-body">
+
+      <section class="ctl-group">
+        <h3>Target Beat Rate</h3>
+        <div class="seg" id="bpmSeg">
+          <button data-bpm="30" class="seg-btn">30<br /><small>2s pendulum</small></button>
+          <button data-bpm="60" class="seg-btn">60<br /><small>seconds pendulum</small></button>
+          <button data-bpm="120" class="seg-btn">120<br /><small>half-second</small></button>
+        </div>
+        <label class="row">
+          <span>Custom BPM<br /><small>beats (ticks + tocks) per minute</small></span>
+          <input type="number" id="bpmCustom" min="10" max="300" step="1" placeholder="e.g. 80" />
+        </label>
+      </section>
+
+      <section class="ctl-group">
+        <h3>Microphone</h3>
+        <p class="hint" id="beatStatus">—</p>
+        <div class="mic-row">
+          <span id="beatPulse" class="beat-pulse" aria-hidden="true"></span>
+          <button id="beatStartStop" class="action-btn">Start Listening</button>
+        </div>
+        <canvas id="beatWave" width="280" height="60"></canvas>
+        <p class="hint">Disables echo/noise cancellation so real clicks aren't smoothed away — hold the device close to the clock in a quiet room.</p>
+      </section>
+
+      <section class="ctl-group">
+        <h3>Reading</h3>
+        <div class="row"><span>Measured rate</span><span class="ro-value" id="roBpm">—</span></div>
+        <div class="row"><span>Drift</span><span class="ro-value" id="roDrift">—</span></div>
+        <div class="row"><span>Confidence</span><span class="ro-value" id="roConfidence">—</span></div>
+        <div class="row"><span>Session</span><span class="ro-value" id="roSession">—</span></div>
+        <p class="hint" id="roHint">Listening for ticks… the readout appears after a few beats.</p>
+        <button id="beatReset" class="action-btn">Reset session</button>
+      </section>
+
+    </div>
+  </div>
+
   <script src="js/audio.js"></script>
   <script src="js/clock.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/beat-timer.js"></script>
+  <script src="js/pwa.js"></script>
 </body>
 </html>

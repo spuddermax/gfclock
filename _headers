@@ -1,0 +1,18 @@
+# Cloudflare Pages custom headers (https://developers.cloudflare.com/pages/configuration/headers/)
+#
+# Pages auto-invalidates its edge cache on every deploy, so this isn't about
+# staleness across releases — it's about the service-worker update dance:
+# browsers only ever fetch a new sw.js if the response isn't served from
+# their own HTTP cache, so keep these three explicitly no-cache.
+
+/sw.js
+  Cache-Control: no-cache
+
+/manifest.json
+  Cache-Control: no-cache
+
+/index.html
+  Cache-Control: no-cache
+
+/
+  Cache-Control: no-cache

@@ -364,9 +364,10 @@ const ChimeAudio = (() => {
     muted = m;
     if (master) master.gain.value = muted ? 0 : volume;
   }
+  function getMuted() { return muted; }
   /* Unlock audio on first user gesture (browsers require this) and start
      preloading the bell samples + the strike recording so they're ready. */
   function unlock() { ensureCtx(); loadBells(); loadWestminster(); }
 
-  return { playChime, playStrike, playTick, chimeDuration, setVolume, setTickVolume, setMuted, setTempo, setPhraseGap, setStrikeGap, unlock };
+  return { playChime, playStrike, playTick, chimeDuration, setVolume, setTickVolume, setMuted, getMuted, setTempo, setPhraseGap, setStrikeGap, unlock };
 })();

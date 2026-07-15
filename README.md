@@ -30,6 +30,12 @@ Open that URL on the other machine. If it doesn't connect, allow inbound TCP
 on port **8473** through this computer's firewall (e.g. `sudo ufw allow 8473/tcp`),
 and make sure both devices are on the same network.
 
+> **Note:** the clock dial/chimes work fine over this plain-HTTP LAN address,
+> but the **Beat Timer** (microphone access) and **offline install** both
+> require a "secure context" — HTTPS or `localhost` — which a plain
+> `http://192.168.x.x:8473` address does not satisfy. Use the Cloudflare
+> Tunnel URL or `localhost` for those two features.
+
 If `start.sh` isn't executable yet:
 
 ```bash
@@ -38,29 +44,45 @@ chmod +x start.sh && ./start.sh
 
 It uses only Python 3's built-in `http.server` — no dependencies.
 
-### Public hosting (Cloudflare Tunnel)
+### Public hosting (Cloudflare Pages)
 
-A live copy runs at **<https://clock.myavs.us>**, published from this machine
-through a [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/)
-(no open inbound ports). Two `systemd` services keep it up and start it on boot:
+The live copy at **<https://clock.myavs.us>** is now served directly by
+**Cloudflare Pages**, connected to this repo's `main` branch on GitHub — every
+push auto-deploys, no server to run or keep patched. Build settings (there's
+no build step): framework preset **None**, build command **(empty)**, build
+output directory **`/`**.
 
-| Service | Role |
-| --- | --- |
-| `gfclock.service` | runs `start.sh` (the Python static server on port **8473**) |
-| `cloudflared-clock.service` | runs the `clock` tunnel, mapping `clock.myavs.us` → `http://localhost:8473` |
+A root-level `_headers` file (Cloudflare Pages' [custom-headers
+convention](https://developers.cloudflare.com/pages/configuration/headers/))
+marks `sw.js`, `manifest.json`, and `index.html` `Cache-Control: no-cache`, so
+browsers always re-check for a fresh service worker / app shell rather than
+serving a stale edge-cached copy — Pages itself already auto-invalidates its
+cache on every deploy, so this is purely about the *service worker's own*
+update check.
 
-The tunnel ingress lives in `~/.cloudflared/config.yml`. Edits to the
-HTML/CSS/JS are served immediately (the server sends `Cache-Control: no-store`),
-so no restart or cache purge is needed after a content change.
+Pushing to `main` is now the entire deploy process:
 
 ```bash
-# Follow logs
+git push origin main
+```
+
+Watch the deploy at the Cloudflare dashboard → **Workers & Pages** → the
+`gfclock` project → **Deployments**.
+
+### Local network / dev hosting (Cloudflare Tunnel)
+
+`start.sh` + the `gfclock.service`/`cloudflared-clock.service` systemd units
+described above are **still running** on this machine as a local dev/LAN
+setup, but `clock.myavs.us` DNS now points at Cloudflare Pages instead of the
+tunnel, so the tunnel no longer serves the public domain. It's still useful
+for iterating locally before pushing (edits are visible immediately, no
+deploy needed) and for LAN access via the printed `192.168.x.x` address.
+
+```bash
+# Follow tunnel logs
 sudo journalctl -u cloudflared-clock.service -f
 
-# Restart after changing start.sh or the port
-sudo systemctl restart gfclock.service
-
-# Stop / disable public hosting
+# Stop / disable the local tunnel + server entirely
 sudo systemctl disable --now cloudflared-clock.service gfclock.service
 ```
 
@@ -167,19 +189,73 @@ Append to the URL to preset state (handy for testing):
 - `?ssclouds=5..50` — number of screensaver clouds (default `40`)
 - `?time=HH:MM` — jump the clock to a time
 - `?moon=0..1` — pin the moon phase (`0`/`1` = new, `0.5` = full)
+- `?view=beat` — open straight into the Beat Timer view
+- `?beatbpm=N` — preset the Beat Timer's target BPM
 
 Example: `http://localhost:8473/?theme=auto&speed=3600&moon=0.5`
+
+## Beat Timer
+
+The **⏱ Beat Timer** button (next to the ⚙ settings gear) opens a separate,
+full-screen tool for tuning a **real, physical pendulum clock** — it has nothing
+to do with the simulated clock above it. It listens through the device
+microphone for the real clock's tick-tock, measures the true beat rate, and
+reports how many seconds per day the clock is running fast or slow, so you know
+which way (and roughly how much) to move the pendulum bob:
+
+- **Target Beat Rate** — pick the real clock's beat rate: `30 BPM` (a ~1m/2-second
+  pendulum, common in tall case clocks), `60 BPM` (the classic seconds pendulum),
+  `120 BPM` (half-second, common in mantel clocks), or enter a custom BPM.
+- **Start Listening** — grants microphone access (disabling echo/noise
+  cancellation, which would otherwise smear the clock's sharp click) and starts
+  detecting beats; a pulse dot flashes on every detected tick/tock and a small
+  live meter shows the audio level against the detection threshold, so you can
+  confirm the mic is actually hearing the clock before trusting the numbers.
+- **Reading** — measured BPM, drift in seconds/day (signed: positive = fast),
+  a live confidence estimate (`±X.X sec/day`, computed from the session's own
+  data — it tightens the longer you listen), beat count/session duration, and a
+  plain-English hint ("running fast — lengthen the pendulum..."). The
+  app's own settings drawer is muted for the duration so its simulated tick
+  can't be picked up by the mic and contaminate the reading.
+- No real clock handy? Set the simulated clock's **Time speed** to `1×` (or
+  `2×`) with **Ticking sound** on, select the matching `60` (or `120`) BPM
+  preset, and hold the device near its own speaker — a good way to sanity-check
+  the tool against a known-exact reference rate.
+
+Microphone access requires a secure context (HTTPS or `localhost`) — see the
+LAN-address note above.
+
+## Installing as an app (offline)
+
+gfclock is installable as a standalone app (Android Chrome: menu → **Add to
+Home screen** / **Install app**) and, once installed or even just visited once,
+works with **no internet connection at all** — the dial, chimes, and the
+microphone-based Beat Timer are all fully local. This is powered by a service
+worker (`sw.js`) that caches every asset on first load.
+
+If you edit any cached file (HTML/CSS/JS/audio/icons) after installing,
+**bump `CACHE_NAME` in `sw.js`** — otherwise an already-installed copy of the
+app keeps serving the old cached version indefinitely, even though a live
+browser tab (unaffected by the service worker's cache) always sees the fresh
+version: `_headers` marks `sw.js`/`manifest.json`/`index.html` `no-cache` on
+Cloudflare Pages, and `start.sh` sends `Cache-Control: no-store` locally.
 
 ## Files
 
 ```
-index.html      markup: cabinet, dial, moon arch, pendulum, weights, settings drawer
+index.html      markup: cabinet, dial, moon arch, pendulum, weights, settings drawer, Beat Timer view
 styles.css      all visuals + theme variables + animations
 js/clock.js     dial build, render loop, hands, moon phase, auto day/night sky, viewport scaling
 js/audio.js     sample-based bell chimes + recorded strike + synth tick (Web Audio)
 js/main.js      settings, chime scheduling, night silence, persistence, UI wiring
+js/beat-timer.js     Beat Timer view: mic setup, rate/drift regression, live readouts
+js/beat-processor.js AudioWorklet: real-time tick/tock onset detection
+js/pwa.js       registers the service worker
+manifest.json   PWA manifest (name, icons, standalone display)
+sw.js           service worker: offline caching + install support
 assets/audio/   bells/*.mp3 (CC0 tubular bells) + westminster.mp3 (strike) + CREDITS
 assets/mountains.svg   snow-capped mountain range for the Auto sky
+assets/icons/   app icons for install/home-screen
 start.sh        Python static (no-cache) server on port 8473, prints the LAN URL
 LICENSE         MIT
 ```
