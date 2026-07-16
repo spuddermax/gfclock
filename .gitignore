@@ -2,3 +2,4 @@
 *.log
 # scratch/throwaway test pages
 _*.html
+.wrangler/
