@@ -257,6 +257,22 @@ body[data-theme="auto"] #viewport { background: transparent; }
   align-items: center;
 }
 
+/* Two clock "skins" (grandfather + cuckoo) live on the stage at once; only
+   one is shown at a time, toggled via body[data-clockstyle] (see the Clock
+   Style setting / on-screen toggle in main.js). Each carries its own flex
+   layout so it centers exactly as #stage used to when it was the only
+   occupant. */
+#stage > .skin-root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+#cuckooSkin.skin-root { display: none; }
+body[data-clockstyle="cuckoo"] #gfSkin.skin-root { display: none; }
+body[data-clockstyle="cuckoo"] #cuckooSkin.skin-root { display: flex; }
+
 /* ===========================================================
    HOOD / BONNET
    =========================================================== */
@@ -683,9 +699,13 @@ body[data-theme="auto"] #viewport { background: transparent; }
   align-items: center;
   transform: translateX(-50%);
 }
-#wStrike { transform: translateX(calc(-50% - 150px)); }
-#wTime   { transform: translateX(-50%); }
-#wChime  { transform: translateX(calc(-50% + 150px)); }
+.weight[data-weight="strike"] { transform: translateX(calc(-50% - 150px)); }
+.weight[data-weight="time"]   { transform: translateX(-50%); }
+.weight[data-weight="chime"]  { transform: translateX(calc(-50% + 150px)); }
+/* Cuckoo case is narrower, so its weights hang closer together than the
+   grandfather clock's. */
+.cuckoo-hangers .weight[data-weight="strike"] { transform: translateX(calc(-50% - 110px)); }
+.cuckoo-hangers .weight[data-weight="chime"]  { transform: translateX(calc(-50% + 110px)); }
 /* Two lines descend the sides of the sheave, tangent to the bottom wrap.
    Their length (--cable) is set by JS to move the weight as it runs/winds. */
 .weight .cables {
@@ -1056,6 +1076,16 @@ body[data-theme="auto"] #viewport { background: transparent; }
 .beat-btn { right: 84px; }
 .beat-btn::after { content: "⏱"; }
 
+/* Clock-style toggle: opposite corner from the gear/beat cluster. */
+.style-btn { left: 18px; right: auto; }
+.style-btn::after { content: "🐦"; font-size: 24px; }
+body[data-clockstyle="cuckoo"] .style-btn::after { content: "🕰️"; }
+
+/* Drawer sections specific to one clock style (Clock Style section itself
+   stays visible in both, so the user can always switch back). */
+body[data-clockstyle="cuckoo"] .gf-only { display: none; }
+body:not([data-clockstyle="cuckoo"]) .cuckoo-only { display: none; }
+
 .beat-view {
   position: fixed;
   inset: 0;
@@ -1138,3 +1168,407 @@ body[data-theme="auto"] #viewport { background: transparent; }
 }
 .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .action-btn:disabled:hover { background: rgba(255,255,255,0.08); }
+
+/* ===========================================================
+   CUCKOO CLOCK SKIN
+   A narrower Black Forest chalet case: pitched shingled roof,
+   carved wood appliqués, a bird door above the dial, pinecone
+   weights and a leaf-shaped pendulum bob. The dial/hands/winders
+   are the exact same 540px component the grandfather clock uses
+   (only recolored) so the numeral/tick geometry Clock.js builds
+   once in JS lines up unchanged — just the case around it differs.
+   =========================================================== */
+.cuckoo-hood {
+  width: 760px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 3;
+  /* Transparent — the roof overhangs the body, and the sky shows through
+     that gap rather than a solid backing. */
+}
+
+/* ---------- Roof ---------- */
+.cuckoo-roof {
+  position: relative;
+  width: 760px;
+  height: 190px;
+  margin-bottom: -6px;
+  clip-path: polygon(50% 0%, 100% 78%, 100% 100%, 0% 100%, 0% 78%);
+  background:
+    repeating-linear-gradient(180deg, rgba(0,0,0,0.16) 0 11px, transparent 11px 13px),
+    linear-gradient(180deg, var(--wood-light), var(--wood-dark) 85%);
+  box-shadow: 0 10px 22px var(--shadow);
+}
+/* Scalloped bargeboard trim along the eaves. */
+.cuckoo-roof::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -12px;
+  height: 18px;
+  background: radial-gradient(circle at 9px 0, transparent 8px, var(--wood-edge) 9px) repeat-x;
+  background-size: 18px 18px;
+}
+.cuckoo-roof-ridge {
+  position: absolute;
+  top: -10px; left: 50%;
+  width: 28px; height: 28px;
+  transform: translateX(-50%) rotate(45deg);
+  background: var(--wood-edge);
+  border-radius: 4px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+}
+
+/* ---------- Body: carved front board holding the bird door + dial ---------- */
+.cuckoo-body {
+  width: 620px;
+  position: relative;
+  background: linear-gradient(90deg, var(--wood-dark), var(--wood-mid) 12%, var(--wood-light) 50%, var(--wood-mid) 88%, var(--wood-dark));
+  border: 10px solid var(--wood-edge);
+  border-top: none;
+  padding: 26px 0 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 12px 30px var(--shadow);
+}
+
+/* Carved leaf/vine appliqués flanking the case — same wood tones as the
+   case itself (a real carving, not painted-on greenery). */
+.cuckoo-leaf {
+  position: absolute;
+  top: 30px; bottom: 30px;
+  width: 46px;
+  pointer-events: none;
+  opacity: 0.9;
+  background:
+    radial-gradient(16px 26px at 50% 8%,  var(--wood-light), transparent 72%),
+    radial-gradient(14px 24px at 50% 28%, var(--wood-edge),  transparent 72%),
+    radial-gradient(16px 26px at 50% 48%, var(--wood-light), transparent 72%),
+    radial-gradient(14px 24px at 50% 68%, var(--wood-edge),  transparent 72%),
+    radial-gradient(16px 26px at 50% 88%, var(--wood-light), transparent 72%);
+  filter: drop-shadow(1px 2px 1px rgba(0,0,0,0.4));
+}
+.cuckoo-leaf-left { left: 10px; }
+.cuckoo-leaf-right { right: 10px; transform: scaleX(-1); }
+
+/* ---------- Bird door ---------- */
+/* The door and bird are siblings (not nested — see index.html) so the
+   door's slide-up transform doesn't carry the bird along with it. */
+.cuckoo-door-frame {
+  position: relative;
+  width: 96px; height: 84px;
+  margin: 4px 0 24px;
+  border-radius: 48px 48px 8px 8px;
+  background: #150d06;
+  border: 4px solid var(--wood-edge);
+  overflow: hidden;
+  box-shadow: inset 0 0 12px rgba(0,0,0,0.7), 0 3px 6px rgba(0,0,0,0.4);
+}
+.cuckoo-door {
+  position: absolute;
+  inset: 3px;
+  z-index: 2;
+  border-radius: 44px 44px 6px 6px;
+  background: linear-gradient(180deg, var(--wood-light), var(--wood-mid) 60%, var(--wood-dark));
+  border: 2px solid var(--wood-edge);
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.4);
+  transition: transform 0.28s ease-in;
+}
+.cuckoo-door.open { transform: translateY(-100%); }
+
+.cuckoo-bird {
+  position: absolute;
+  left: 50%;
+  bottom: -70px;
+  width: 64px; height: 64px;
+  z-index: 1;
+  transform: translateX(-50%);
+  transition: bottom 0.28s ease-out;
+}
+.cuckoo-bird.out { bottom: 6px; }
+.cuckoo-bird.calling { animation: cuckooCallBob 0.4s ease-in-out; }
+@keyframes cuckooCallBob {
+  0%, 100% { transform: translateX(-50%) rotate(0deg); }
+  35%      { transform: translateX(-50%) rotate(-10deg); }
+  65%      { transform: translateX(-50%) rotate(5deg); }
+}
+.cuckoo-bird-body {
+  position: absolute;
+  left: 10px; bottom: 0;
+  width: 40px; height: 34px;
+  border-radius: 50% 50% 45% 45%;
+  background: linear-gradient(180deg, #8a6a45, #5c4327);
+  box-shadow: inset -4px -4px 8px rgba(0,0,0,0.35);
+}
+.cuckoo-bird-tail {
+  position: absolute;
+  left: 2px; bottom: 2px;
+  width: 16px; height: 22px;
+  background: linear-gradient(180deg, #6b4f30, #43301c);
+  clip-path: polygon(100% 0, 100% 100%, 0 60%);
+  transform: rotate(14deg);
+}
+.cuckoo-bird-wing {
+  position: absolute;
+  left: 16px; bottom: 6px;
+  width: 22px; height: 18px;
+  border-radius: 50% 50% 40% 60%;
+  background: linear-gradient(180deg, #6b4f30, #43301c);
+}
+.cuckoo-bird-head {
+  position: absolute;
+  left: 16px; bottom: 26px;
+  width: 24px; height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #a9835a, #6b4f30);
+}
+.cuckoo-bird-beak {
+  position: absolute;
+  left: 36px; bottom: 32px;
+  width: 0; height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 10px solid #e0a83c;
+}
+
+/* ---------- Music box dance stage ---------- */
+/* A little recessed stage between the bird door and the dial: a dark
+   backdrop (.cuckoo-dance-backdrop, always the lowest layer) sits behind a
+   solid wood facade (.cuckoo-dance-facade) that covers the middle of the
+   stage, leaving only the door-shaped gaps at each end open — those gaps
+   ARE the doors (.cuckoo-dance-door is just their decorative frame).
+
+   Two couples always stand visible near those gaps, wherever they last
+   stopped. While the music box plays, each couple crosses left-to-right in
+   front of the facade (z-index above it, fully visible), then at the right
+   door drops to a layer BEHIND the facade — hidden by it, since the facade
+   only has gaps at the two door positions — and travels back to the left
+   door on that hidden layer, where it rises back in front to repeat. They
+   never fade; visibility comes entirely from which side of the facade
+   they're on.
+
+   Within a couple, the two dancers pass each other left/right only (no
+   vertical motion, no spin): whichever one is currently moving left-to-right
+   renders in front of the other, and they swap every time they turn around
+   at an end of their swing — with an ease at each end, like a pendulum.
+
+   Every animation here is always-on and toggled with animation-play-state
+   (paused/running) rather than added/removed, so pausing genuinely freezes
+   mid-cycle (position AND front/behind layering) and resuming continues
+   from exactly there — add/remove would restart at 0% and snap them back.
+
+   The hidden return (right door -> left door) covers the same distance as
+   the visible crossing, so it gets an equal 50% share of the cycle and the
+   identical ease-in-out curve — same rate both directions, not a quick
+   snap-back. Each couple's negative animation-delay spreads the four
+   couples evenly around the full loop (25% apart) so, with a 50/50 split,
+   two are always visible at once during dancing. The trade-off: since that
+   spacing isn't confined to the visible half, a couple whose delay lands it
+   past 50% will default to its hidden pose on a fresh page load that has
+   never danced yet — cosmetic only, and it settles into the shared rhythm
+   after the first chime. */
+.cuckoo-dance-stage {
+  position: relative;
+  width: 400px; height: 56px;
+  margin: 4px 0 16px;
+}
+.cuckoo-dance-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 6px;
+  background: #150d06;
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.6);
+}
+.cuckoo-dance-facade {
+  position: absolute;
+  top: 2px; bottom: 0;
+  left: 52px; right: 52px;
+  z-index: 2;
+  background: linear-gradient(180deg, var(--wood-mid), var(--wood-dark));
+  border-top: 2px solid var(--wood-edge);
+}
+.cuckoo-dance-door {
+  position: absolute;
+  top: 2px; bottom: 0;
+  width: 52px;
+  z-index: 2;
+  border-radius: 26px 26px 0 0;
+  border: 3px solid var(--wood-edge);
+  border-bottom: none;
+  box-sizing: border-box;
+}
+.cuckoo-dance-door-left { left: 0; }
+.cuckoo-dance-door-right { right: 0; }
+
+.cuckoo-dance-couple {
+  position: absolute;
+  bottom: 4px;
+  width: 0; height: 0;
+  animation: coupleLoop 9s linear infinite;
+  animation-play-state: paused;
+}
+.cuckoo-dance-couple.dancing { animation-play-state: running; }
+.cuckoo-dance-couple-1 { animation-delay: 0s; }
+.cuckoo-dance-couple-2 { animation-delay: -2.25s; }
+.cuckoo-dance-couple-3 { animation-delay: -4.5s; }
+.cuckoo-dance-couple-4 { animation-delay: -6.75s; }
+/* 0%-49.9%: visible, in front of the facade, travelling left-door-centre ->
+   right-door-centre, easing in and out at both ends like a real approach
+   (not constant speed) so it settles into the doorway rather than just
+   arriving and vanishing. 50%: drops behind the facade right at the door
+   centre — no position change here, so no pop. 50.1%-99.9%: hidden,
+   travelling back to the left door — same duration and easing curve as the
+   visible half, so the same rate covers the same distance either direction.
+   100%: rises in front again, matching 0% exactly, so the loop has no jump
+   there either. Landing exactly on each door's centre (not short of it,
+   under the still-solid facade) is what makes the couple genuinely reach
+   the opening before disappearing. */
+@keyframes coupleLoop {
+  0%     { left: 26px; z-index: 3; animation-timing-function: ease-in-out; }
+  49.9%  { left: calc(100% - 26px); z-index: 3; animation-timing-function: ease-in-out; }
+  50%    { z-index: 1; animation-timing-function: ease-in-out; }
+  50.1%  { left: calc(100% - 26px); z-index: 1; animation-timing-function: ease-in-out; }
+  99.9%  { left: 26px; z-index: 1; }
+  100%   { left: 26px; z-index: 3; }
+}
+
+/* The two dancers of a couple pass each other left/right only — whichever
+   one is moving left-to-right (increasing translateX) is in front; the
+   other, moving right-to-left, is behind. They swap roles every half-cycle,
+   easing in/out at each end like a pendulum. dancer-b runs the same
+   keyframe half a cycle out of phase, so it's always the mirror of dancer-a. */
+.cuckoo-dancer {
+  position: absolute;
+  left: 0; bottom: 0;
+  width: 22px; height: 40px;
+  animation: dancerSwing 2.4s ease-in-out infinite;
+  animation-play-state: paused;
+}
+.cuckoo-dance-couple.dancing .cuckoo-dancer { animation-play-state: running; }
+.cuckoo-dancer-b { animation-delay: -1.2s; }
+@keyframes dancerSwing {
+  0%     { transform: translateX(-31px); z-index: 2; }
+  49.9%  { transform: translateX(8.9px);  z-index: 2; }
+  50%    { transform: translateX(9px);    z-index: 1; }
+  99.9%  { transform: translateX(-30.9px); z-index: 1; }
+  100%   { transform: translateX(-31px);  z-index: 2; }
+}
+.cuckoo-dancer-skirt {
+  position: absolute;
+  left: 50%; bottom: 0;
+  width: 22px; height: 26px;
+  margin-left: -11px;
+  border-radius: 50% 50% 40% 40% / 70% 70% 30% 30%;
+  background: linear-gradient(180deg, #b8425a, #7a2338);
+  box-shadow: inset -4px -4px 8px rgba(0,0,0,0.3), 0 2px 3px rgba(0,0,0,0.35);
+}
+.cuckoo-dancer-b .cuckoo-dancer-skirt {
+  background: linear-gradient(180deg, #3f6fa8, #244868);
+}
+.cuckoo-dancer-head {
+  position: absolute;
+  left: 50%; bottom: 24px;
+  width: 13px; height: 13px;
+  margin-left: -6.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #e8c39e, #b98a5e);
+}
+
+/* ---------- Dial ---------- */
+.dial-frame.cuckoo-dial-frame {
+  background: linear-gradient(135deg, var(--wood-light), var(--wood-mid) 55%, var(--wood-edge));
+}
+
+/* ---------- Open-air weights + pendulum ---------- */
+/* Real cuckoo clocks have no cabinet below the case: the chains, weights and
+   pendulum all hang freely against the wall (or, here, the sky) — so unlike
+   the grandfather clock's .trunk, this is a plain, unstyled flex spacer:
+   just a positioning context, no wood/border/background of its own. */
+.cuckoo-hang-area {
+  position: relative;
+  flex: 1;
+  width: 760px;
+}
+
+.cuckoo-chain-pair {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 22px;
+}
+.cuckoo-chain-weight-wrap,
+.cuckoo-chain-pull-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* The chain itself: a thin metallic link pattern. Its length is set by JS
+   via --cable (the weight side — the same custom property the grandfather
+   clock's cables use) and --cable-max (the full travel range). It's one
+   continuous chain looped over the sprocket, so the free "pull" side is
+   sized as the inverse of the weight side: short when the weight side is
+   long (run down) and long when the weight side is short (freshly wound).
+   Pulling that free end down is how a cuckoo movement is actually wound —
+   there's no key-wound arbor like the grandfather clock's. */
+.cuckoo-chain {
+  display: block;
+  width: 5px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(180deg, var(--brass-lite) 0 3px, var(--brass-dark) 3px 6px);
+}
+.cuckoo-chain-weight { height: var(--cable, 40px); }
+.cuckoo-chain-pull    { height: calc(var(--cable-max, 300px) + 16px - var(--cable, 40px)); }
+
+.cuckoo-pull-ring {
+  width: 20px; height: 24px;
+  margin-top: -2px;
+  padding: 0;
+  border: 3px solid var(--brass-dark);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+.cuckoo-pull-ring:hover { filter: brightness(1.25); }
+.cuckoo-pull-ring:active { filter: brightness(0.85); }
+
+/* Pinecone weight bobs (the eyelet ring is inherited from .bob::before). */
+.bob.cuckoo-pinecone {
+  width: 46px; height: 96px;
+  margin-top: -2px;
+  border-radius: 50% 50% 46% 46% / 62% 62% 38% 38%;
+  background:
+    repeating-radial-gradient(ellipse at 50% 0%, rgba(0,0,0,0.22) 0 4px, transparent 4px 11px),
+    linear-gradient(90deg, var(--wood-edge), var(--wood-light) 45%, var(--wood-mid) 60%, var(--wood-edge));
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 0 6px 10px rgba(0,0,0,0.45);
+}
+
+/* Leaf-shaped pendulum bob and a plain wood rod, hanging free in the open
+   air (no case front behind them, unlike the grandfather clock's). */
+.pendulum.cuckoo-pendulum {
+  top: -312px; /* pivot lines up with the dial centre above */
+}
+.pendulum-rod.cuckoo-rod {
+  width: 6px;
+  background: linear-gradient(90deg, var(--wood-edge), var(--wood-light), var(--wood-edge));
+}
+.pendulum-bob.cuckoo-leaf-bob {
+  position: relative;
+  width: 120px; height: 170px;
+  margin: -14px auto 0;
+  background: linear-gradient(160deg, #93b06a, #4c6b32 60%, #2c3f1c);
+  border: 3px solid #2c3f1c;
+  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 50% 84%, 18% 100%, 0% 38%);
+  box-shadow: inset -10px -10px 20px rgba(0,0,0,0.35), 0 8px 14px rgba(0,0,0,0.4);
+}
+.pendulum-bob.cuckoo-leaf-bob::after {
+  content: "";
+  position: absolute;
+  top: 8%; bottom: 16%; left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: rgba(0,0,0,0.3);
+}

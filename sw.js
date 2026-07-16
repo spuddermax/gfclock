@@ -13,7 +13,7 @@
    moved on.
    =========================================================== */
 
-const CACHE_NAME = 'gfclock-v1';
+const CACHE_NAME = 'gfclock-v11';
 
 const PRECACHE_URLS = [
   './',

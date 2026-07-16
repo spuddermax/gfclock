@@ -7,6 +7,9 @@
   const STORE_KEY = 'gfclock.settings';
 
   const defaults = {
+    clockStyle: 'grandfather', // 'grandfather' | 'cuckoo'
+    cuckooCalls: true,   // cuckoo skin: bird calls the hour + half-hour
+    cuckooMusic: true,   // cuckoo skin: music box + dancers after the hour call
     theme: 'auto',
     cloudDensity: 20, // percent; 20% == the four original clouds
     chime: 'westminster',
@@ -34,6 +37,9 @@
 
   // URL query overrides (handy for deep-linked testing, e.g. ?theme=auto&speed=3600&time=11:59)
   const params = new URLSearchParams(location.search);
+  if (params.has('style')) settings.clockStyle = params.get('style') === 'cuckoo' ? 'cuckoo' : 'grandfather';
+  if (params.has('cuckoocalls')) settings.cuckooCalls = params.get('cuckoocalls') !== '0';
+  if (params.has('cuckoomusic')) settings.cuckooMusic = params.get('cuckoomusic') !== '0';
   if (params.has('theme')) settings.theme = params.get('theme');
   if (params.has('clouds')) settings.cloudDensity = Number(params.get('clouds'));
   if (params.has('chime')) settings.chime = params.get('chime');
@@ -98,11 +104,10 @@
   const UNIT_CHIME  = 1 / 240;       // per phrase (10 phrases/hr * 24 -> full drop in a day)
   const WIND_FULL_MS = 6000;         // real ms to wind a full run-down up to the top
   const CABLE_MIN = 16;              // cable length (px) when fully wound
-  let weightTravel = 600;            // px of travel, measured at init
   const weight = {
-    time:   { el: null, drop: 0.50, winding: false },
-    strike: { el: null, drop: 0.40, winding: false, descendLeft: 0, descendRate: 0 },
-    chime:  { el: null, drop: 0.60, winding: false, descendLeft: 0, descendRate: 0 },
+    time:   { parts: null, drop: 0.50, winding: false },
+    strike: { parts: null, drop: 0.40, winding: false, descendLeft: 0, descendRate: 0 },
+    chime:  { parts: null, drop: 0.60, winding: false, descendLeft: 0, descendRate: 0 },
   };
 
   // ---- Going train / pendulum ----
@@ -126,24 +131,36 @@
   const WIND_TICK_MS = 250;
   let windTickAccum = 0;
 
+  /* Each skin (grandfather / cuckoo) has its own set of weight elements
+     (data-weight="time|strike|chime"), sized to its own case. Both skins'
+     weights are driven from the same shared drop state each frame, so each
+     element gets its own measured travel/pulley size rather than one shared
+     global. */
   function initWeights() {
-    weight.time.el   = document.getElementById('wTime');
-    weight.strike.el = document.getElementById('wStrike');
-    weight.chime.el  = document.getElementById('wChime');
-    const door = document.querySelector('.glass-door');
-    // Measure the non-cable height of a weight (pulley + hook + bob) at the
-    // minimum cable, then size the travel to the available door height.
-    for (const k in weight) weight[k].el.style.setProperty('--cable', CABLE_MIN + 'px');
-    const baseFixed = weight.time.el.offsetHeight - CABLE_MIN;
-    const avail = door.clientHeight - 16; // 8px headroom top + bottom
-    weightTravel = Math.max(120, avail - baseFixed - CABLE_MIN);
-    // Cache the rotating sheave (spokes) and each pulley's diameter so the
-    // sheave can roll on the cable: one circumference per π·d of travel.
     for (const k in weight) {
       const w = weight[k];
-      w.spokes = w.el.querySelector('.spokes');
-      const pulley = w.el.querySelector('.pulley');
-      w.pulleyDiam = pulley ? pulley.offsetWidth : 34; // px
+      const els = Array.from(document.querySelectorAll(`.weight[data-weight="${k}"]`));
+      w.parts = els.map((wEl) => {
+        wEl.style.setProperty('--cable', CABLE_MIN + 'px');
+        // Placeholder so the cuckoo skin's pull-chain calc() (which reads
+        // --cable-max) doesn't fall back to its CSS default during the
+        // offsetHeight measurement just below and throw the reading off —
+        // the real value is set right after.
+        wEl.style.setProperty('--cable-max', CABLE_MIN + 'px');
+        // Grandfather weights hang inside the glass trunk door; cuckoo weights
+        // hang in the open air below the case (no cabinet — see index.html).
+        const door = wEl.closest('.glass-door, .cuckoo-hang-area');
+        const baseFixed = wEl.offsetHeight - CABLE_MIN;
+        const avail = (door ? door.clientHeight : 600) - 16; // 8px headroom top + bottom
+        const travel = Math.max(120, avail - baseFixed - CABLE_MIN);
+        // Cuckoo chains inversely size their free "pull" side from this (see
+        // .cuckoo-chain-pull in styles.css) — harmless on the grandfather skin.
+        wEl.style.setProperty('--cable-max', (CABLE_MIN + travel) + 'px');
+        const spokes = wEl.querySelector('.spokes');
+        const pulley = wEl.querySelector('.pulley');
+        const pulleyDiam = pulley ? pulley.offsetWidth : 34; // px
+        return { el: wEl, spokes, pulleyDiam, travel };
+      });
     }
     applyWeights();
   }
@@ -151,17 +168,20 @@
   function applyWeights() {
     for (const k in weight) {
       const w = weight[k];
+      if (!w.parts) continue;
       const drop = Math.max(0, Math.min(1, w.drop));
-      const descent = drop * weightTravel;           // px the sheave has dropped
-      const cable = CABLE_MIN + descent;
-      w.el.style.setProperty('--cable', cable.toFixed(1) + 'px');
-      // Roll without slipping on the cable: a full turn per circumference of
-      // travel. Positive (clockwise) as it runs down; so winding up turns it
-      // counter-clockwise.
-      if (w.spokes) {
-        const deg = (descent / (Math.PI * w.pulleyDiam)) * 360;
-        w.spokes.style.transform = `translate(-50%, -50%) rotate(${deg.toFixed(2)}deg)`;
-      }
+      w.parts.forEach((p) => {
+        const descent = drop * p.travel;              // px the sheave has dropped
+        const cable = CABLE_MIN + descent;
+        p.el.style.setProperty('--cable', cable.toFixed(1) + 'px');
+        // Roll without slipping on the cable: a full turn per circumference of
+        // travel. Positive (clockwise) as it runs down; so winding up turns it
+        // counter-clockwise.
+        if (p.spokes) {
+          const deg = (descent / (Math.PI * p.pulleyDiam)) * 360;
+          p.spokes.style.transform = `translate(-50%, -50%) rotate(${deg.toFixed(2)}deg)`;
+        }
+      });
     }
   }
 
@@ -207,12 +227,17 @@
     // The escapement keeps time only while running; the rate tracks the swing
     // (capped at full) so the clock slows as it coasts down.
     Clock.setTimePower(going.running ? Math.min(1, going.swingDeg / SWING_DEG) : 0);
-    if (el.pendulum) {
-      el.pendulum.style.setProperty('--swing', going.swingDeg.toFixed(2) + 'deg');
-    }
+    // Both skins' pendulums share this one swing amplitude (only one is ever
+    // visible), so every one of them gets the update.
+    const swingVal = going.swingDeg.toFixed(2) + 'deg';
+    el.pendulums.forEach((p) => { p.style.setProperty('--swing', swingVal); });
   }
 
-  /* ---- Dragging the pendulum: push it to start, bring it to rest to stop ---- */
+  /* ---- Dragging the pendulum: push it to start, bring it to rest to stop ----
+     Only the visible skin's pendulum can actually receive pointer events (the
+     hidden skin's is display:none), so `draggedPend` always refers to that
+     one; the physics (`going`) stay shared between skins regardless. */
+  let draggedPend = null;
   function pendDragAngle(e) {
     const dx = e.clientX - pendPivot.x;
     const dy = Math.max(1, e.clientY - pendPivot.y);   // pivot is above the bob
@@ -224,7 +249,7 @@
     going.dragDeg = pendDragAngle(e);   // bob angle from vertical, + = right
     // The pivot is above the bob, so a positive CSS rotation swings the bob
     // LEFT — negate so the bob follows the cursor.
-    el.pendulum.style.transform = `rotate(${(-going.dragDeg).toFixed(2)}deg)`;
+    draggedPend.style.transform = `rotate(${(-going.dragDeg).toFixed(2)}deg)`;
     // Hand-beating the escapement: each swing past the beat angle, alternating
     // sides, advances the clock one second — just as the real escapement steps
     // once per swing of a seconds pendulum.
@@ -238,7 +263,7 @@
     if (!going.dragging) return;
     going.dragging = false;
     window.removeEventListener('pointermove', pendDragMove);
-    el.pendulum.style.transform = '';     // hand control back to the swing animation
+    draggedPend.style.transform = '';     // hand control back to the swing animation
     const phi = going.dragDeg;            // + = released to the right
     going.swingDeg = Math.abs(phi);       // begin swinging at exactly the released amplitude
     going.running = Math.abs(phi) >= PUSH_START_DEG; // enough = start; near the bottom = stop
@@ -246,18 +271,21 @@
     // Start the swing from the released side. In the keyframe, 0% is the bob's
     // LEFT extreme (rotate +--swing) and 50% its RIGHT extreme; so begin half a
     // cycle in (negative delay) when released to the right, else it snaps across.
-    el.pendulum.style.setProperty('--swing', going.swingDeg.toFixed(2) + 'deg');
-    el.pendulum.style.animation = 'none';
-    void el.pendulum.offsetWidth;         // reflow so the animation restarts cleanly
-    el.pendulum.style.animation = `swing 2s ease-in-out ${phi > 0 ? '-1s' : '0s'} infinite`;
+    const swingVal = going.swingDeg.toFixed(2) + 'deg';
+    el.pendulums.forEach((p) => { p.style.setProperty('--swing', swingVal); });
+    draggedPend.style.animation = 'none';
+    void draggedPend.offsetWidth;         // reflow so the animation restarts cleanly
+    draggedPend.style.animation = `swing 2s ease-in-out ${phi > 0 ? '-1s' : '0s'} infinite`;
+    draggedPend = null;
   }
   function pendDragStart(e) {
     e.preventDefault();
     going.dragging = true;
+    draggedPend = e.currentTarget;
     // Measure the pivot (transform-origin: top centre) with the element upright.
-    el.pendulum.style.animation = 'none';
-    el.pendulum.style.transform = 'rotate(0deg)';
-    const r = el.pendulum.getBoundingClientRect();
+    draggedPend.style.animation = 'none';
+    draggedPend.style.transform = 'rotate(0deg)';
+    const r = draggedPend.getBoundingClientRect();
     pendPivot = { x: r.left + r.width / 2, y: r.top };
     going.beatSide = beatSideOf(pendDragAngle(e));  // grabbing aside shouldn't beat
     pendDragMove(e);
@@ -336,11 +364,12 @@
     return mins >= start || mins < end;
   }
 
-  function flashDial(durationMs) {
-    const frame = document.querySelector('.dial-frame');
-    frame.classList.remove('flash');
-    void frame.offsetWidth; // restart animation
-    frame.classList.add('flash');
+  function flashDial() {
+    document.querySelectorAll('.dial-frame').forEach((frame) => {
+      frame.classList.remove('flash');
+      void frame.offsetWidth; // restart animation
+      frame.classList.add('flash');
+    });
   }
 
   /* Called every frame by the clock with the current simulated Date and the
@@ -382,6 +411,7 @@
   }
 
   function fireChime(date, quarter, speed) {
+    if (settings.clockStyle === 'cuckoo') { fireCuckoo(date, quarter, speed); return; }
     if (settings.chime === 'silent') return;
 
     // A train only works while its weight still has drop left; once it bottoms
@@ -425,13 +455,97 @@
     }
   }
 
+  /* Traditional cuckoo clocks don't have a quarter-hour chime: the bird calls
+     the hour count (:00) and once on the half-hour (:30), both from the
+     'strike' (left) weight/train — quarters 1 and 3 are silent, matching a
+     real one. On a musical cuckoo clock, the hour call (only) is then
+     followed by a tune from the music box, driven by the 'chime' (right)
+     weight/train, with the dancers twirling for as long as it plays. */
+  function fireCuckoo(date, quarter, speed) {
+    if (!settings.cuckooCalls) return;
+    if (quarter !== 0 && quarter !== 2) return;
+    const isHour = quarter === 0;
+    if (weight.strike.drop >= 1) return;
+
+    const count = isHour ? ((date.getHours() % 12) || 12) : 1;
+    const callDur = ChimeAudio.cuckooDuration(count);
+    scheduleDescent('strike', count * UNIT_STRIKE, callDur);
+
+    const silenced = isNightSilenced(date);
+    const audible = !silenced && !settings.muted && speed <= AUDIO_SPEED_LIMIT;
+    const normalSpeed = speed <= AUDIO_SPEED_LIMIT;
+
+    // Full door-open/bird-pop timeline only at normal-ish speeds; fast-forward
+    // would otherwise stack many overlapping multi-second timelines, so it
+    // just gets the same quick generic flash the grandfather clock uses.
+    if (normalSpeed) animateCuckoo(count);
+    else flashDial();
+
+    if (audible) ChimeAudio.playCuckoo(count);
+
+    // Music box: hour call only, and only if it's wound and switched on.
+    if (isHour && settings.cuckooMusic && weight.chime.drop < 1) {
+      const musicDur = ChimeAudio.musicDuration();
+      setTimeout(() => {
+        scheduleDescent('chime', UNIT_CHIME, musicDur);
+        if (normalSpeed) animateDancers(musicDur);
+        if (audible) ChimeAudio.playMusicBox();
+      }, callDur * 1000);
+    }
+  }
+
+  /* Runs the bird-door timeline: open, call `count` times (spaced by the same
+     strike-gap setting used for the grandfather clock's hour gong), then
+     retract and close. */
+  function animateCuckoo(count) {
+    const doors = document.querySelectorAll('.cuckoo-door');
+    const birds = document.querySelectorAll('.cuckoo-bird');
+    if (!doors.length) return;
+    doors.forEach((d) => d.classList.add('open'));
+    birds.forEach((b) => { b.classList.remove('calling'); b.classList.add('out'); });
+    const gapMs = Math.max(300, settings.strikeGap * 1000);
+    let i = 0;
+    const call = () => {
+      birds.forEach((b) => {
+        b.classList.remove('calling');
+        void b.offsetWidth; // restart the per-call animation
+        b.classList.add('calling');
+      });
+      i++;
+      if (i < count) setTimeout(call, gapMs);
+      else setTimeout(finish, gapMs);
+    };
+    const finish = () => {
+      birds.forEach((b) => b.classList.remove('out', 'calling'));
+      doors.forEach((d) => d.classList.remove('open'));
+    };
+    setTimeout(call, 200); // door swings open before the first call
+  }
+
+  /* Run the music-box couples for durSec seconds, matching the tune. Their
+     door-to-door crossing and left/right passing animations are always
+     running in CSS (see .cuckoo-dance-couple/.cuckoo-dancer) — toggling this
+     class only flips animation-play-state, so they resume from exactly
+     where they stopped (position and front/behind layering both) rather
+     than resetting to a start position. */
+  function animateDancers(durSec) {
+    const couples = document.querySelectorAll('.cuckoo-dance-couple');
+    if (!couples.length) return;
+    couples.forEach((c) => c.classList.add('dancing'));
+    setTimeout(() => couples.forEach((c) => c.classList.remove('dancing')), durSec * 1000);
+  }
+
   /* ===================== UI WIRING ===================== */
   const el = {};
   function cacheUI() {
     el.gearBtn = document.getElementById('gearBtn');
     el.drawer = document.getElementById('drawer');
     el.closeDrawer = document.getElementById('closeDrawer');
-    el.pendulum = document.getElementById('pendulum');
+    el.pendulums = Array.from(document.querySelectorAll('.pendulum'));
+    el.styleBtn = document.getElementById('styleBtn');
+    el.styleSeg = document.getElementById('styleSeg');
+    el.cuckooChk = document.getElementById('cuckooChk');
+    el.cuckooMusicChk = document.getElementById('cuckooMusicChk');
     el.autoWindChk = document.getElementById('autoWindChk');
     el.themeSeg = document.getElementById('themeSeg');
     el.cloudRange = document.getElementById('cloudRange');
@@ -474,6 +588,29 @@
     container.querySelectorAll('.seg-btn').forEach((b) => {
       b.classList.toggle('active', b.dataset[attr] === String(value));
     });
+  }
+
+  function applyClockStyle(style) {
+    style = style === 'cuckoo' ? 'cuckoo' : 'grandfather';
+    settings.clockStyle = style;
+    document.body.dataset.clockstyle = style;
+    if (el.styleSeg) setActive(el.styleSeg, 'style', style);
+    if (el.styleBtn) {
+      el.styleBtn.dataset.tip = style === 'cuckoo' ? 'Switch to Grandfather Clock' : 'Switch to Cuckoo Clock';
+    }
+    save();
+  }
+
+  function applyCuckooCalls(on) {
+    settings.cuckooCalls = !!on;
+    if (el.cuckooChk) el.cuckooChk.checked = settings.cuckooCalls;
+    save();
+  }
+
+  function applyCuckooMusic(on) {
+    settings.cuckooMusic = !!on;
+    if (el.cuckooMusicChk) el.cuckooMusicChk.checked = settings.cuckooMusic;
+    save();
   }
 
   function applyTheme(theme) {
@@ -599,6 +736,15 @@
       el.drawer.classList.remove('open');
     });
 
+    el.styleBtn.addEventListener('click', () => {
+      applyClockStyle(settings.clockStyle === 'cuckoo' ? 'grandfather' : 'cuckoo');
+    });
+    el.styleSeg.addEventListener('click', (e) => {
+      if (e.target.dataset.style) applyClockStyle(e.target.dataset.style);
+    });
+    el.cuckooChk.addEventListener('change', () => applyCuckooCalls(el.cuckooChk.checked));
+    el.cuckooMusicChk.addEventListener('change', () => applyCuckooMusic(el.cuckooMusicChk.checked));
+
     el.themeSeg.addEventListener('click', (e) => {
       if (e.target.dataset.theme) applyTheme(e.target.dataset.theme);
     });
@@ -662,6 +808,22 @@
 
     el.testChime.addEventListener('click', () => {
       ChimeAudio.unlock();
+      if (settings.clockStyle === 'cuckoo') {
+        const testCount = 3;
+        const callDur = ChimeAudio.cuckooDuration(testCount);
+        animateCuckoo(testCount);
+        ChimeAudio.playCuckoo(testCount);
+        scheduleDescent('strike', testCount * UNIT_STRIKE, callDur);
+        if (settings.cuckooMusic) {
+          const musicDur = ChimeAudio.musicDuration();
+          setTimeout(() => {
+            scheduleDescent('chime', UNIT_CHIME, musicDur);
+            animateDancers(musicDur);
+            ChimeAudio.playMusicBox();
+          }, callDur * 1000);
+        }
+        return;
+      }
       flashDial();
       const testTune = settings.chime === 'silent' ? 'westminster' : settings.chime;
       const dur = ChimeAudio.chimeDuration(testTune, 0);
@@ -688,11 +850,13 @@
 
     // Grab the pendulum to push-start it (drag aside + release) or stop it
     // (bring it to rest near the bottom of the arc).
-    if (el.pendulum) el.pendulum.addEventListener('pointerdown', pendDragStart);
+    el.pendulums.forEach((p) => p.addEventListener('pointerdown', pendDragStart));
 
-    // Winding arbors on the dial — wind the matching weight up only while the
-    // key is held down; releasing (or leaving) stops the winding.
-    document.querySelectorAll('.winder').forEach((btn) => {
+    // Winding: the grandfather clock's dial arbors, and the cuckoo clock's
+    // free pull-chain rings (a cuckoo movement has no key-wound arbors — you
+    // wind it by pulling the chain end opposite the weight). Both wind the
+    // matching weight up only while held; releasing (or leaving) stops it.
+    document.querySelectorAll('.winder, .cuckoo-pull-ring').forEach((btn) => {
       const which = btn.dataset.arbor;
       const start = (e) => {
         e.preventDefault();
@@ -714,6 +878,9 @@
 
   /* Push loaded settings into the UI controls. */
   function hydrate() {
+    applyClockStyle(settings.clockStyle);
+    applyCuckooCalls(settings.cuckooCalls);
+    applyCuckooMusic(settings.cuckooMusic);
     applyTheme(settings.theme);
     applyCloudDensity(settings.cloudDensity);
     applyChime(settings.chime);

@@ -19,16 +19,20 @@ const Clock = (() => {
   const SYNODIC = 29.530588853;        // days, lunar synodic month
   const NEW_MOON_EPOCH = Date.UTC(2000, 0, 6, 18, 14); // known new moon
 
+  // Two clock "skins" (grandfather + cuckoo) share this single simulated-time
+  // engine and are both present in the DOM at once (one hidden via CSS), so
+  // most elements below are NodeLists — every matching element in both skins
+  // is kept in sync each frame, and only the visible skin is ever seen.
   function cache() {
-    el.hour = document.getElementById('hourHand');
-    el.minute = document.getElementById('minuteHand');
-    el.second = document.getElementById('secondHand');
-    el.numerals = document.getElementById('numerals');
-    el.ticks = document.getElementById('ticks');
-    el.subSeconds = document.getElementById('subSeconds');
-    el.subTicks = document.getElementById('subTicks');
-    el.dateText = document.getElementById('dateText');
-    el.moonDisc = document.getElementById('moonDisc');
+    el.hours = document.querySelectorAll('.hour-hand');
+    el.minutes = document.querySelectorAll('.minute-hand');
+    el.seconds = document.querySelectorAll('.sub-hand');
+    el.numeralSets = document.querySelectorAll('.numerals');
+    el.tickSets = document.querySelectorAll('.ticks');
+    el.subSecondsEls = document.querySelectorAll('.sub-seconds');
+    el.subTickSets = document.querySelectorAll('.sub-ticks');
+    el.dateTexts = document.querySelectorAll('.date-text');
+    el.moonDisc = document.getElementById('moonDisc'); // grandfather-only, singleton
     el.sky = document.getElementById('sky');
     el.stars = document.getElementById('stars');
     el.clouds = document.getElementById('clouds');
@@ -38,34 +42,40 @@ const Clock = (() => {
     el.stage = document.getElementById('stage');
   }
 
-  /* ---------- Build the dial (numerals + ticks) once ---------- */
+  /* ---------- Build the dial (numerals + ticks) once, into every skin's dial ---------- */
   function buildDial() {
     const ROMAN = ['XII','I','II','III','IV','V','VI','VII','VIII','IX','X','XI'];
     const radius = 200; // px from center for numeral placement
-    for (let i = 0; i < 12; i++) {
-      const ang = (i * 30) * Math.PI / 180;
-      const x = Math.sin(ang) * radius;
-      const y = -Math.cos(ang) * radius;
-      const span = document.createElement('span');
-      span.className = 'numeral';
-      span.textContent = ROMAN[i];
-      span.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
-      el.numerals.appendChild(span);
-    }
-    for (let i = 0; i < 60; i++) {
-      const tick = document.createElement('div');
-      tick.className = 'tick' + (i % 5 === 0 ? ' major' : '');
-      // place at top, rotate around center, push outward
-      tick.style.transform = `rotate(${i * 6}deg) translateY(-236px)`;
-      el.ticks.appendChild(tick);
-    }
+    el.numeralSets.forEach((container) => {
+      for (let i = 0; i < 12; i++) {
+        const ang = (i * 30) * Math.PI / 180;
+        const x = Math.sin(ang) * radius;
+        const y = -Math.cos(ang) * radius;
+        const span = document.createElement('span');
+        span.className = 'numeral';
+        span.textContent = ROMAN[i];
+        span.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+        container.appendChild(span);
+      }
+    });
+    el.tickSets.forEach((container) => {
+      for (let i = 0; i < 60; i++) {
+        const tick = document.createElement('div');
+        tick.className = 'tick' + (i % 5 === 0 ? ' major' : '');
+        // place at top, rotate around center, push outward
+        tick.style.transform = `rotate(${i * 6}deg) translateY(-236px)`;
+        container.appendChild(tick);
+      }
+    });
     // Seconds subdial: all 60 second marks, majors every 5 seconds.
-    for (let i = 0; i < 60; i++) {
-      const t = document.createElement('div');
-      t.className = 'sub-tick' + (i % 5 === 0 ? ' major' : '');
-      t.style.transform = `rotate(${i * 6}deg) translateY(-46px)`;
-      el.subTicks.appendChild(t);
-    }
+    el.subTickSets.forEach((container) => {
+      for (let i = 0; i < 60; i++) {
+        const t = document.createElement('div');
+        t.className = 'sub-tick' + (i % 5 === 0 ? ' major' : '');
+        t.style.transform = `rotate(${i * 6}deg) translateY(-46px)`;
+        container.appendChild(t);
+      }
+    });
   }
 
   /* ---------- Clouds (density-driven) ---------- */
@@ -538,6 +548,7 @@ const Clock = (() => {
   /* ---------- Moon phase ---------- */
   let moonOverride = null;  // testing: pin the phase (0..1) via Clock.setMoonPhase
   function updateMoon(date) {
+    if (!el.moonDisc) return; // not every skin has a moon-phase arch (cuckoo doesn't)
     let phase;
     if (moonOverride != null) {
       phase = moonOverride;
@@ -636,15 +647,19 @@ const Clock = (() => {
     const s = date.getSeconds() + date.getMilliseconds() / 1000;
     const m = date.getMinutes() + s / 60;
     const h = (date.getHours() % 12) + m / 60;
-    el.hour.style.transform = `rotate(${h * 30}deg)`;
-    el.minute.style.transform = `rotate(${m * 6}deg)`;
+    const hourT = `rotate(${h * 30}deg)`;
+    const minT = `rotate(${m * 6}deg)`;
     // Second hand ticks: snap to whole seconds rather than sweeping smoothly.
-    el.second.style.transform = `rotate(${Math.floor(s) * 6}deg)`;
+    const secT = `rotate(${Math.floor(s) * 6}deg)`;
+    el.hours.forEach((e) => { e.style.transform = hourT; });
+    el.minutes.forEach((e) => { e.style.transform = minT; });
+    el.seconds.forEach((e) => { e.style.transform = secT; });
   }
 
   function updateDate(date) {
     const opts = { weekday: 'short', month: 'short', day: 'numeric' };
-    el.dateText.textContent = date.toLocaleDateString(undefined, opts);
+    const txt = date.toLocaleDateString(undefined, opts);
+    el.dateTexts.forEach((e) => { e.textContent = txt; });
   }
 
   /* ---------- Main render loop ---------- */
@@ -727,7 +742,7 @@ const Clock = (() => {
   function getTime() { return simNow; }
   function setMoonPhase(p) { moonOverride = (p == null ? null : ((p % 1) + 1) % 1); }
   function setOnTick(fn) { onTick = fn; }
-  function showSeconds(show) { el.subSeconds.style.display = show ? '' : 'none'; }
+  function showSeconds(show) { el.subSecondsEls.forEach((e) => { e.style.display = show ? '' : 'none'; }); }
   function setCloudDensity(pct) { buildClouds(pct); }
   function setScreensaverClouds(n) { if (Number(n) > 0) ssMax = Math.round(Number(n)); }
   /* Configure shooting stars: avg seconds between events (0 = off) and how many

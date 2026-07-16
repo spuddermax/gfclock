@@ -323,6 +323,107 @@ const ChimeAudio = (() => {
     }
   }
 
+  /* ---- Cuckoo clock: synthesized "cuck-oo" call ----
+     A real cuckoo call is a two-note descending minor third, played on a
+     breathy, near-pure tone (the clock's little folded-reed pipes). Two
+     detuned sine oscillators per note give it a soft, slightly reedy body
+     without sounding like a bell. */
+  const CUCKOO_HIGH = 784.0;  // "cuck" — G5
+  const CUCKOO_LOW = 659.25;  // "oo"   — E5 (minor third below)
+  const CUCKOO_NOTE_GAP = 0.19; // seconds between the "cuck" and the "oo"
+  const CUCKOO_NOTE_DUR = 0.24; // seconds each note rings
+
+  function cuckooNote(freq, t, dur) {
+    [1, 1.004].forEach((detune, i) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq * detune;
+      const peak = 0.34 * (i === 0 ? 1 : 0.7);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(g);
+      g.connect(master);
+      osc.start(t);
+      osc.stop(t + dur + 0.05);
+    });
+  }
+
+  /* One "cuck-oo" call at ctx time `t`. */
+  function cuckooCall(t) {
+    cuckooNote(CUCKOO_HIGH, t, CUCKOO_NOTE_DUR);
+    cuckooNote(CUCKOO_LOW, t + CUCKOO_NOTE_GAP, CUCKOO_NOTE_DUR);
+  }
+
+  /* Call `count` times (the hour count, or once for the half-hour), spaced
+     by the same strike-gap the grandfather clock uses for its hour gong. */
+  function playCuckoo(count) {
+    ensureCtx();
+    let t = ctx.currentTime + 0.05;
+    for (let i = 0; i < count; i++) {
+      cuckooCall(t);
+      t += strikeGapSec;
+    }
+  }
+
+  /* Time (seconds) until the last call's onset — used to schedule the
+     weight's descent and the visual bird timeline alongside the audio. */
+  function cuckooDuration(count) {
+    return Math.max(0, count - 1) * strikeGapSec + CUCKOO_NOTE_GAP + CUCKOO_NOTE_DUR;
+  }
+
+  /* ---- Music box (cuckoo clocks with a dancer platform) ----
+     A bright, quickly-decaying plucked tone — the "comb" character of a
+     real music-box mechanism — playing an approximation of the famous
+     "Sleeping Beauty" Waltz theme (Tchaikovsky, The Sleeping Beauty, 1890 —
+     long public domain; the same melody later popularized as "Once Upon a
+     Dream"), two phrases, after the hour cuckoo call.
+
+     Each entry is [note, beats] rather than a flat note list, so the
+     lilting long-short-short waltz rhythm actually comes through instead of
+     every note landing with the same spacing. */
+  const WALTZ_BEAT = 0.3; // seconds per beat
+  const WALTZ_TUNE = [
+    // phrase 1 — the octave leap up on "I know you", then a stepwise fall
+    ['C4', 1], ['C5', 2], ['D5', 1], ['E5', 3], ['D5', 1], ['C5', 1],
+    ['B4', 1], ['A4', 2], ['G4', 1], ['F4', 1], ['G4', 3],
+    // phrase 2 — same shape, resolving down to the tonic this time
+    ['C4', 1], ['C5', 2], ['D5', 1], ['E5', 3], ['D5', 1], ['C5', 1],
+    ['B4', 1], ['A4', 2], ['F4', 1], ['D4', 1], ['C4', 3],
+  ];
+
+  function musicNote(freq, t, dur = 0.5) {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.32, t + 0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g);
+    g.connect(master);
+    osc.start(t);
+    osc.stop(t + dur + 0.05);
+  }
+
+  /* Play the waltz tune once, starting almost immediately. */
+  function playMusicBox() {
+    ensureCtx();
+    let t = ctx.currentTime + 0.05;
+    WALTZ_TUNE.forEach(([n, beats]) => {
+      const dur = beats * WALTZ_BEAT;
+      musicNote(NOTE[n], t, dur * 0.92);
+      t += dur;
+    });
+  }
+
+  /* Time (seconds) the tune takes — used to schedule the weight's descent
+     and keep the dancers dancing for exactly as long as the music plays. */
+  function musicDuration() {
+    return WALTZ_TUNE.reduce((sum, [, beats]) => sum + beats * WALTZ_BEAT, 0);
+  }
+
   /* Time (seconds) until the chime's last note onset, so the hour strike is
      scheduled right after the melody (its natural ring-out then overlaps the
      strike). Not the full ring tail — we don't want to wait ~7s. */
@@ -369,5 +470,5 @@ const ChimeAudio = (() => {
      preloading the bell samples + the strike recording so they're ready. */
   function unlock() { ensureCtx(); loadBells(); loadWestminster(); }
 
-  return { playChime, playStrike, playTick, chimeDuration, setVolume, setTickVolume, setMuted, getMuted, setTempo, setPhraseGap, setStrikeGap, unlock };
+  return { playChime, playStrike, playTick, playCuckoo, playMusicBox, chimeDuration, cuckooDuration, musicDuration, setVolume, setTickVolume, setMuted, getMuted, setTempo, setPhraseGap, setStrikeGap, unlock };
 })();

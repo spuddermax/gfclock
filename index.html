@@ -10,7 +10,7 @@
   <link rel="icon" href="assets/icons/icon-192.png" />
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
 </head>
-<body data-theme="light">
+<body data-theme="light" data-clockstyle="grandfather">
   <!-- "Gooey" filter: blurs then re-thresholds the alpha so the cloud lobes
        merge into one smooth silhouette with rounded edges (no sharp cusps).
        Kept at body level so it works in any theme (sky/screensaver clouds). -->
@@ -47,6 +47,9 @@
   <div id="viewport">
     <div id="stage">
 
+    <!-- ===================== GRANDFATHER CLOCK SKIN ===================== -->
+    <div id="gfSkin" class="skin-root">
+
       <!-- ===================== HOOD / BONNET ===================== -->
       <div class="hood">
         <div class="pediment"></div>
@@ -73,25 +76,25 @@
             <div class="dial">
               <div class="dial-face">
                 <!-- Roman numeral chapter ring (filled by JS) -->
-                <div id="numerals" class="numerals"></div>
+                <div class="numerals"></div>
                 <!-- Minute tick ring (filled by JS) -->
-                <div id="ticks" class="ticks"></div>
+                <div class="ticks"></div>
 
                 <!-- Winding arbors (8-day movement). Placed at the 9, 6 and 3
                      clock positions, each directly above its weight:
                      9 = strike (hour gong), 6 = time (centre), 3 = chime. -->
-                <button class="winder w9" id="windStrike" data-arbor="strike"
+                <button class="winder w9" data-arbor="strike"
                         data-tip="Wind the strike weight" aria-label="Wind the strike (hour gong) weight"></button>
-                <button class="winder w6" id="windTime" data-arbor="time"
+                <button class="winder w6" data-arbor="time"
                         data-tip="Wind the time weight" aria-label="Wind the time weight"></button>
-                <button class="winder w3" id="windChime" data-arbor="chime"
+                <button class="winder w3" data-arbor="chime"
                         data-tip="Wind the chime weight" aria-label="Wind the chime weight"></button>
 
                 <!-- Seconds subdial (upper, where the logo used to be) -->
-                <div id="subSeconds" class="sub-seconds">
-                  <div id="subTicks" class="sub-ticks"></div>
+                <div class="sub-seconds">
+                  <div class="sub-ticks"></div>
                   <div class="sub-label">60</div>
-                  <div id="secondHand" class="sub-hand"></div>
+                  <div class="sub-hand"></div>
                   <div class="sub-cap"></div>
                 </div>
 
@@ -100,14 +103,14 @@
                 <div class="maker-sub">Triple Chime &middot; 2004</div>
 
                 <!-- Date window -->
-                <div id="dateWindow" class="date-window">
-                  <span id="dateText">—</span>
+                <div class="date-window">
+                  <span class="date-text">—</span>
                 </div>
 
                 <!-- Hands -->
                 <div class="hands">
-                  <div id="hourHand" class="hand hour-hand"></div>
-                  <div id="minuteHand" class="hand minute-hand"></div>
+                  <div class="hand hour-hand"></div>
+                  <div class="hand minute-hand"></div>
                   <div class="hand-cap"></div>
                 </div>
               </div>
@@ -126,7 +129,7 @@
                pulley by a hook. -->
           <div class="weights">
             <!-- Left: strike (hour gong) weight -->
-            <div class="weight" id="wStrike">
+            <div class="weight" data-weight="strike">
               <div class="cables"><span class="cable"></span><span class="cable"></span></div>
               <span class="pulley">
                 <span class="cable-wrap"></span>
@@ -137,7 +140,7 @@
               <span class="bob"></span>
             </div>
             <!-- Centre: time (going train) weight -->
-            <div class="weight" id="wTime">
+            <div class="weight" data-weight="time">
               <div class="cables"><span class="cable"></span><span class="cable"></span></div>
               <span class="pulley">
                 <span class="cable-wrap"></span>
@@ -148,7 +151,7 @@
               <span class="bob"></span>
             </div>
             <!-- Right: chime weight -->
-            <div class="weight" id="wChime">
+            <div class="weight" data-weight="chime">
               <div class="cables"><span class="cable"></span><span class="cable"></span></div>
               <span class="pulley">
                 <span class="cable-wrap"></span>
@@ -161,7 +164,7 @@
           </div>
 
           <!-- Pendulum -->
-          <div id="pendulum" class="pendulum">
+          <div class="pendulum">
             <div class="pendulum-rod"></div>
             <div class="pendulum-bob"></div>
           </div>
@@ -177,6 +180,188 @@
         </div>
       </div>
 
+    </div><!-- /#gfSkin -->
+
+    <!-- ===================== CUCKOO CLOCK SKIN ===================== -->
+    <div id="cuckooSkin" class="skin-root">
+
+      <!-- ===================== ROOF / CASE HEAD ===================== -->
+      <div class="cuckoo-hood">
+        <div class="cuckoo-roof">
+          <div class="cuckoo-roof-ridge"></div>
+        </div>
+
+        <div class="cuckoo-body">
+          <div class="cuckoo-leaf cuckoo-leaf-left" aria-hidden="true"></div>
+          <div class="cuckoo-leaf cuckoo-leaf-right" aria-hidden="true"></div>
+
+          <!-- Bird door: opens and the cuckoo pops out to call. The door and
+               bird are siblings (not nested) so the door's slide-up transform
+               doesn't drag the bird along with it. -->
+          <div class="cuckoo-door-frame">
+            <div class="cuckoo-door"></div>
+            <div class="cuckoo-bird">
+              <span class="cuckoo-bird-tail"></span>
+              <span class="cuckoo-bird-body"></span>
+              <span class="cuckoo-bird-wing"></span>
+              <span class="cuckoo-bird-head"></span>
+              <span class="cuckoo-bird-beak"></span>
+            </div>
+          </div>
+
+          <!-- Music box dance stage: between the bird door and the dial. A
+               dark backdrop sits behind everything; a solid wood facade
+               covers its middle, leaving only the two door-shaped gaps at
+               each end open. Four couples, phased so at least a few are
+               always visible; while the music box plays, each pair crosses
+               left-to-right in front of the facade (visible), eases into
+               the right door and dips behind it, travels back hidden, then
+               eases back out at the left door to repeat. Within a pair, the
+               two dancers pass each other left/right (one in front while
+               moving right, the other behind while moving left, swapping
+               each pass) — no vertical motion, no spin. Freezes in place
+               when the music stops, and resumes from exactly there next
+               time. -->
+          <div class="cuckoo-dance-stage">
+            <div class="cuckoo-dance-backdrop"></div>
+
+            <div class="cuckoo-dance-couple cuckoo-dance-couple-1">
+              <span class="cuckoo-dancer cuckoo-dancer-a">
+                <span class="cuckoo-dancer-skirt"></span>
+                <span class="cuckoo-dancer-head"></span>
+              </span>
+              <span class="cuckoo-dancer cuckoo-dancer-b">
+                <span class="cuckoo-dancer-skirt"></span>
+                <span class="cuckoo-dancer-head"></span>
+              </span>
+            </div>
+
+            <div class="cuckoo-dance-couple cuckoo-dance-couple-2">
+              <span class="cuckoo-dancer cuckoo-dancer-a">
+                <span class="cuckoo-dancer-skirt"></span>
+                <span class="cuckoo-dancer-head"></span>
+              </span>
+              <span class="cuckoo-dancer cuckoo-dancer-b">
+                <span class="cuckoo-dancer-skirt"></span>
+                <span class="cuckoo-dancer-head"></span>
+              </span>
+            </div>
+
+            <div class="cuckoo-dance-couple cuckoo-dance-couple-3">
+              <span class="cuckoo-dancer cuckoo-dancer-a">
+                <span class="cuckoo-dancer-skirt"></span>
+                <span class="cuckoo-dancer-head"></span>
+              </span>
+              <span class="cuckoo-dancer cuckoo-dancer-b">
+                <span class="cuckoo-dancer-skirt"></span>
+                <span class="cuckoo-dancer-head"></span>
+              </span>
+            </div>
+
+            <div class="cuckoo-dance-couple cuckoo-dance-couple-4">
+              <span class="cuckoo-dancer cuckoo-dancer-a">
+                <span class="cuckoo-dancer-skirt"></span>
+                <span class="cuckoo-dancer-head"></span>
+              </span>
+              <span class="cuckoo-dancer cuckoo-dancer-b">
+                <span class="cuckoo-dancer-skirt"></span>
+                <span class="cuckoo-dancer-head"></span>
+              </span>
+            </div>
+
+            <div class="cuckoo-dance-facade"></div>
+            <span class="cuckoo-dance-door cuckoo-dance-door-left"></span>
+            <span class="cuckoo-dance-door cuckoo-dance-door-right"></span>
+          </div>
+
+          <!-- ===================== DIAL ===================== -->
+          <!-- No winding arbors here: unlike the grandfather clock's key-wound
+               movement, a cuckoo movement is wound by pulling the free chain
+               end opposite each weight (see .cuckoo-pull-ring below). -->
+          <div class="dial-frame cuckoo-dial-frame">
+            <div class="dial">
+              <div class="dial-face">
+                <div class="numerals"></div>
+                <div class="ticks"></div>
+
+                <div class="maker cuckoo-maker">Schwarzwald</div>
+                <div class="maker-sub">Black Forest &middot; 8-Day</div>
+
+                <div class="date-window">
+                  <span class="date-text">—</span>
+                </div>
+
+                <div class="hands">
+                  <div class="hand hour-hand"></div>
+                  <div class="hand minute-hand"></div>
+                  <div class="hand-cap"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== OPEN-AIR WEIGHTS + PENDULUM ===================== -->
+      <!-- Cuckoo clocks have no cabinet below the case: the chains, weights
+           and pendulum all hang freely in the open air. This area is
+           deliberately unstyled (transparent) so the sky shows through
+           around them, instead of a wood trunk enclosing them. -->
+      <div class="cuckoo-hang-area">
+        <div class="weights cuckoo-hangers">
+          <!-- Each hanger is one continuous chain (the drive sprocket is
+               hidden inside the case, not shown): one side descends to the
+               weight, the other hangs free with a pull-ring — pulling it
+               down winds that weight back up. -->
+          <div class="weight cuckoo-hanger" data-weight="strike">
+            <div class="cuckoo-chain-pair">
+              <span class="cuckoo-chain-weight-wrap">
+                <span class="cuckoo-chain cuckoo-chain-weight"></span>
+                <span class="bob cuckoo-pinecone"></span>
+              </span>
+              <span class="cuckoo-chain-pull-wrap">
+                <span class="cuckoo-chain cuckoo-chain-pull"></span>
+                <button class="cuckoo-pull-ring" data-arbor="strike"
+                        data-tip="Pull to wind the hour-call weight" aria-label="Wind the hour-call weight"></button>
+              </span>
+            </div>
+          </div>
+          <div class="weight cuckoo-hanger" data-weight="time">
+            <div class="cuckoo-chain-pair">
+              <span class="cuckoo-chain-weight-wrap">
+                <span class="cuckoo-chain cuckoo-chain-weight"></span>
+                <span class="bob cuckoo-pinecone"></span>
+              </span>
+              <span class="cuckoo-chain-pull-wrap">
+                <span class="cuckoo-chain cuckoo-chain-pull"></span>
+                <button class="cuckoo-pull-ring" data-arbor="time"
+                        data-tip="Pull to wind the time weight" aria-label="Wind the time weight"></button>
+              </span>
+            </div>
+          </div>
+          <div class="weight cuckoo-hanger" data-weight="chime">
+            <div class="cuckoo-chain-pair">
+              <span class="cuckoo-chain-weight-wrap">
+                <span class="cuckoo-chain cuckoo-chain-weight"></span>
+                <span class="bob cuckoo-pinecone"></span>
+              </span>
+              <span class="cuckoo-chain-pull-wrap">
+                <span class="cuckoo-chain cuckoo-chain-pull"></span>
+                <button class="cuckoo-pull-ring" data-arbor="chime"
+                        data-tip="Pull to wind the music box weight" aria-label="Wind the music box weight"></button>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pendulum cuckoo-pendulum">
+          <div class="pendulum-rod cuckoo-rod"></div>
+          <div class="pendulum-bob cuckoo-leaf-bob"></div>
+        </div>
+      </div>
+
+    </div><!-- /#cuckooSkin -->
+
     </div>
   </div>
 
@@ -188,6 +373,7 @@
   <!-- ===================== SETTINGS ===================== -->
   <button id="gearBtn" class="gear-btn" data-tip="Settings" aria-label="Settings"></button>
   <button id="beatBtn" class="gear-btn beat-btn" data-tip="Beat Timer" aria-label="Beat Timer"></button>
+  <button id="styleBtn" class="gear-btn style-btn" data-tip="Switch to Cuckoo Clock" aria-label="Switch clock style"></button>
 
   <div id="drawer" class="drawer" aria-hidden="true">
     <div class="drawer-head">
@@ -196,6 +382,14 @@
     </div>
 
     <div class="drawer-body">
+
+      <section class="ctl-group">
+        <h3>Clock Style</h3>
+        <div class="seg" id="styleSeg">
+          <button data-style="grandfather" class="seg-btn">Grandfather</button>
+          <button data-style="cuckoo" class="seg-btn">Cuckoo</button>
+        </div>
+      </section>
 
       <section class="ctl-group">
         <h3>Background</h3>
@@ -231,7 +425,7 @@
         </label>
       </section>
 
-      <section class="ctl-group">
+      <section class="ctl-group gf-only">
         <h3>Chime Melody</h3>
         <div class="seg col" id="chimeSeg">
           <button data-chime="westminster" class="seg-btn">Westminster</button>
@@ -249,8 +443,24 @@
           <input type="range" id="gapRange" min="0" max="3" step="0.1" value="1" />
           <span class="slider-val" id="gapReadout">1.0 s</span>
         </label>
+      </section>
+
+      <section class="ctl-group cuckoo-only">
+        <h3>Cuckoo Calls</h3>
         <label class="row">
-          <span>Pause between hour strikes<br /><small>spacing of the hour-count gong</small></span>
+          <span>Cuckoo calls<br /><small>calls the hour count, and once on the half-hour</small></span>
+          <input type="checkbox" id="cuckooChk" checked />
+        </label>
+        <label class="row">
+          <span>Music box<br /><small>plays a tune after the hour call, with dancers</small></span>
+          <input type="checkbox" id="cuckooMusicChk" checked />
+        </label>
+      </section>
+
+      <section class="ctl-group">
+        <h3>Strike / Call Spacing</h3>
+        <label class="row">
+          <span>Pause between hour strikes<br /><small>spacing of the hour-count gong, or cuckoo calls</small></span>
           <input type="range" id="strikeGapRange" min="0.5" max="3" step="0.1" value="1.5" />
           <span class="slider-val" id="strikeGapReadout">1.5 s</span>
         </label>
