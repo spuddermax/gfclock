@@ -1,13 +1,18 @@
 # Grandfather Clock
 
 A self-contained, vanilla HTML/CSS/JS recreation of a Howard Miller triple-chime
-grandfather clock (circa 2004). The case, dial, moon-phase arch, swinging pendulum,
-and hanging weights (on pulleys) are all drawn in CSS. Chimes play note-by-note from
-real public-domain bell samples through the Web Audio API; the escapement tick is
-synthesized. No frameworks and no build step — just a static page plus a handful of
-small audio files and an SVG.
+grandfather clock (circa 2004), plus an alternate Black Forest **cuckoo clock**
+skin — same simulated 8-day movement underneath, a completely different case.
+The case, dial, moon-phase arch (grandfather only), swinging pendulum, and
+hanging weights are all drawn in CSS. Chimes — or, in cuckoo mode, the bird's
+call and a music box with dancing figures — play through the Web Audio API;
+the escapement tick is synthesized. No frameworks and no build step — just a
+static page plus a handful of small audio files and an SVG.
 
 Designed for a **portrait 1080 × 1920** monitor, but it scales to fit any window.
+Switch clock styles with the 🐦/🕰️ button (bottom-left) or the **Clock Style**
+control at the top of the settings drawer — see [Cuckoo
+clock](#cuckoo-clock) below.
 
 ## Run it
 
@@ -92,12 +97,15 @@ Click the **⚙ gear** (top-right) to open the settings drawer:
 
 | Setting | Notes |
 | --- | --- |
+| **Clock style** | `Grandfather` or `Cuckoo` — swaps the whole clock case/skin; same simulated movement underneath. Also toggleable via the 🐦/🕰️ button (bottom-left, outside the drawer). |
 | **Background** | `Light` (white), `Dark`, or `Auto` — Auto simulates day/night sky + ambient light from the (simulated) time, with drifting clouds, a snow-capped mountain range, and stars that come out at night. |
 | **Cloud density** | Slider (0–100%) for cloud cover in the Auto sky — 20% = the default four clouds, 100% = a mostly-overcast deck. |
-| **Chime melody** | `Westminster`, `Whittington`, `St. Michael`, or `Silent` — the triple-chime selector. |
-| **Chime tempo** | Slider (50–150%) for how fast the notes play within a phrase. |
-| **Pause between phrases** | Slider (0–3 s, default **1.0 s**) for the silence before each next phrase. Absolute — not affected by tempo. |
-| **Pause between hour strikes** | Slider (0.5–3 s, default **1.5 s**) for the spacing of the hour-count gong. |
+| **Chime melody** *(grandfather only)* | `Westminster`, `Whittington`, `St. Michael`, or `Silent` — the triple-chime selector. |
+| **Chime tempo** *(grandfather only)* | Slider (50–150%) for how fast the notes play within a phrase. |
+| **Pause between phrases** *(grandfather only)* | Slider (0–3 s, default **1.0 s**) for the silence before each next phrase. Absolute — not affected by tempo. |
+| **Cuckoo calls** *(cuckoo only)* | Toggle (default **on**) for the bird calling the hour count and once on the half-hour. |
+| **Music box** *(cuckoo only)* | Toggle (default **on**) for the tune + dancing figures that follow the hour call. |
+| **Pause between hour strikes** | Slider (0.5–3 s, default **1.5 s**) for the spacing of the hour-count gong (grandfather) or the cuckoo's calls (cuckoo). |
 | **Mute / Volume** | Master sound controls. |
 | **Auto night silence** | Suppresses chimes 10:15 PM – 7:15 AM, like the real movement. |
 | **Ticking sound** | Per-second escapement tick/tock (ticks 24/7; night silence only affects chimes). |
@@ -129,7 +137,9 @@ Settings persist via `localStorage`.
 > Browsers require a user gesture before audio can play. The first click anywhere in the
 > settings drawer (or the Test button) unlocks sound.
 
-### Weights & winding (8-day movement)
+### Weights & winding (8-day movement, grandfather clock)
+
+*The cuckoo clock's weights work differently — see [Cuckoo clock](#cuckoo-clock) below.*
 
 Three weights hang on pulleys in the trunk, one per train:
 
@@ -156,6 +166,35 @@ the tick plays 4×/second as a ratchet sound. To watch the weights run down quic
 while fast-forwarding (and even when the sound is muted or night-silenced, since the
 mechanism still trips).
 
+### Cuckoo clock
+
+Switch to it with the 🐦/🕰️ button or the drawer's **Clock Style** control. It's the
+same simulated movement as the grandfather clock (same weights/pendulum/chime
+engine underneath), wearing a Black Forest chalet case instead:
+
+- **No cabinet.** Real cuckoo clocks hang the weights and pendulum in open
+  air below the case, not inside an enclosed trunk — so that's how this one
+  draws them too, against the sky.
+- **Chains, not cables.** Each weight hangs from a chain looped over a
+  sprocket hidden in the case. The free end of that same chain hangs down
+  the *other* side with a small pull-ring — there's no key-wound arbor like
+  the grandfather clock; **press and hold a pull-ring** to wind that weight,
+  exactly like pulling a real cuckoo chain.
+- **Three weights, left to right: cuckoo, time, music.** The left weight
+  drives the bird's calls, the centre weight is the going train (same 8-day
+  wind as the grandfather clock), and the right weight drives the music box.
+- **The bird** calls the hour count and once on the half-hour, popping out
+  of a door above the dial.
+- **The music box** (right weight) plays once, right after the *hour* call
+  only — an approximation of the "Sleeping Beauty" Waltz theme (Tchaikovsky,
+  1890, public domain; later popularized as "Once Upon a Dream") — while two
+  pairs of carved dancers cross a small recessed stage between two doors set
+  into the case front, passing each other as they go and settling back into
+  place when the tune ends.
+
+Both the bird calls and the music box can be switched off independently in
+the settings drawer (cuckoo mode only).
+
 ### Screensaver
 
 After the configured idle time (default **5 minutes**, set in settings; 0 disables it),
@@ -178,6 +217,9 @@ and polar ice caps (each a different hemisphere) — all in CSS.
 
 Append to the URL to preset state (handy for testing):
 
+- `?style=grandfather|cuckoo` — pick the clock style on load
+- `?cuckoocalls=0|1` — cuckoo mode: toggle the bird calls (default on)
+- `?cuckoomusic=0|1` — cuckoo mode: toggle the music box + dancers (default on)
 - `?theme=light|dark|auto`
 - `?clouds=0..100` — cloud density percent (20 = the default four clouds)
 - `?chime=westminster|whittington|stmichael|silent`
@@ -243,11 +285,11 @@ Cloudflare Pages, and `start.sh` sends `Cache-Control: no-store` locally.
 ## Files
 
 ```
-index.html      markup: cabinet, dial, moon arch, pendulum, weights, settings drawer, Beat Timer view
-styles.css      all visuals + theme variables + animations
+index.html      markup: both clock skins (grandfather + cuckoo), settings drawer, Beat Timer view
+styles.css      all visuals + theme variables + animations, both skins
 js/clock.js     dial build, render loop, hands, moon phase, auto day/night sky, viewport scaling
-js/audio.js     sample-based bell chimes + recorded strike + synth tick (Web Audio)
-js/main.js      settings, chime scheduling, night silence, persistence, UI wiring
+js/audio.js     sample-based bell chimes + recorded strike + synth tick + cuckoo call + music box (Web Audio)
+js/main.js      settings, chime/cuckoo scheduling, night silence, persistence, UI wiring
 js/beat-timer.js     Beat Timer view: mic setup, rate/drift regression, live readouts
 js/beat-processor.js AudioWorklet: real-time tick/tock onset detection
 js/pwa.js       registers the service worker
